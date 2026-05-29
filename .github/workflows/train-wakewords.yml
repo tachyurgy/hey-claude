@@ -1,0 +1,68 @@
+name: Train wake words
+
+# Trains openWakeWord models for the given phrases on a free GitHub-hosted
+# runner (CPU) and uploads each <slug>.onnx as a downloadable artifact.
+# Manual trigger only — this is a long, deliberate job.
+on:
+  workflow_dispatch:
+    inputs:
+      phrases:
+        description: "Semicolon-separated wake phrases to train"
+        required: true
+        default: "hey claude;hey agent;hey codey;hey assistant;okay claude;hey computer"
+      pos_speakers:
+        description: "Positive speaker count per phrase (diversity vs. time)"
+        required: false
+        default: "150"
+      steps:
+        description: "Training steps per phrase"
+        required: false
+        default: "12000"
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space (the negative-feature set is ~16 GB)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          sudo apt-get clean || true
+          df -h /
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyTorch (CPU) + system audio libs
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg libsndfile1
+          python -m pip install --upgrade pip
+          pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Install training dependencies
+        run: pip install -r training/requirements.txt
+
+      - name: Train
+        env:
+          POS_SPEAKERS: ${{ github.event.inputs.pos_speakers }}
+          STEPS: ${{ github.event.inputs.steps }}
+        run: |
+          IFS=';' read -ra PHR <<< "${{ github.event.inputs.phrases }}"
+          echo "Training: ${PHR[@]}"
+          python training/train_wakewords.py "${PHR[@]}"
+
+      - name: List models
+        if: always()
+        run: ls -la wakeword_models/ || echo "no models dir"
+
+      - name: Upload trained models
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wakeword-models
+          path: wakeword_models/*.onnx
+          if-no-files-found: warn

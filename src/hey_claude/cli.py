@@ -54,10 +54,12 @@ def cmd_train(args: argparse.Namespace) -> int:
 
 
 def cmd_import_model(args: argparse.Namespace) -> int:
-    return train.import_model(args.path)
+    return train.import_model(args.path, name=args.name or "", activate=not args.no_activate)
 
 
 def cmd_models(args: argparse.Namespace) -> int:
+    if getattr(args, "models_action", None) == "use":
+        return train.use_model(args.name)
     return train.list_models()
 
 
@@ -219,9 +221,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     im_p = sub.add_parser("import-model", help="install a downloaded .onnx/.tflite wake-word model")
     im_p.add_argument("path")
+    im_p.add_argument("--name", help="store under this name (default: source filename)")
+    im_p.add_argument("--no-activate", action="store_true", help="install without making it active")
     im_p.set_defaults(func=cmd_import_model)
 
-    sub.add_parser("models", help="list installed wake-word models").set_defaults(func=cmd_models)
+    models_p = sub.add_parser("models", help="list / switch installed wake-word models")
+    models_sub = models_p.add_subparsers(dest="models_action")
+    use_p = models_sub.add_parser("use", help="activate an installed model by name")
+    use_p.add_argument("name")
+    models_p.set_defaults(func=cmd_models)
 
     snd_p = sub.add_parser("sounds", help="browse / preview / assign earcons")
     snd_sub = snd_p.add_subparsers(dest="sounds_action")

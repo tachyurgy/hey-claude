@@ -12,7 +12,7 @@ import shutil
 import webbrowser
 from pathlib import Path
 
-from .config import default_model_path, models_dir
+from .config import Config, default_model_path, models_dir
 
 COLAB_URL = (
     "https://colab.research.google.com/github/dscripka/openWakeWord/blob/main/"
@@ -44,7 +44,11 @@ def guide(open_browser: bool = True) -> int:
     return 0
 
 
-def import_model(src: str) -> int:
+def _phrase_from_name(name: str) -> str:
+    return name.replace("_", " ").replace("-", " ").strip()
+
+
+def import_model(src: str, name: str = "", activate: bool = True) -> int:
     source = Path(src).expanduser()
     if not source.exists():
         print(f"✗ no such file: {source}")
@@ -52,29 +56,55 @@ def import_model(src: str) -> int:
     if source.suffix.lower() not in (".onnx", ".tflite"):
         print(f"✗ expected a .onnx or .tflite model, got {source.suffix!r}")
         return 1
-    dest = default_model_path()
-    if source.suffix.lower() == ".tflite":
-        dest = dest.with_suffix(".tflite")
+    stem = name or source.stem
+    dest = models_dir() / f"{stem}{source.suffix.lower()}"
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, dest)
     print(f"✓ installed wake-word model → {dest}")
+    if activate:
+        use_model(stem)
+    else:
+        print(f"  activate it with:  hey-claude models use {stem}")
+    return 0
+
+
+def use_model(name: str) -> int:
+    """Make an installed model the active wake word and set the matching phrase."""
+    md = models_dir()
+    cand = md / name
+    if not cand.exists():
+        for ext in (".onnx", ".tflite"):
+            if (md / f"{name}{ext}").exists():
+                cand = md / f"{name}{ext}"
+                break
+    if not cand.exists():
+        print(f"✗ no installed model named {name!r}. See: hey-claude models")
+        return 1
+    cfg = Config.load()
+    cfg.wakeword_model = str(cand)
+    cfg.wake_phrase = _phrase_from_name(cand.stem)
+    cfg.engine = "openwakeword"
+    cfg.save()
+    print(f'✓ active wake word: "{cfg.wake_phrase}"  ({cand.name})')
     print("  start listening with:  hey-claude")
     return 0
 
 
 def list_models() -> int:
     md = models_dir()
+    active = str(Config.load().resolved_model_path())
     print(f"models directory: {md}")
     if md.exists():
-        found = sorted(p.name for p in md.glob("*") if p.suffix.lower() in (".onnx", ".tflite"))
+        found = sorted(p for p in md.glob("*") if p.suffix.lower() in (".onnx", ".tflite"))
         if found:
-            for name in found:
-                marker = "  (active)" if (md / name) == default_model_path() else ""
-                print(f"  • {name}{marker}")
+            for p in found:
+                marker = "  ← active" if str(p) == active else ""
+                print(f'  • {p.stem:<16} "{_phrase_from_name(p.stem)}"{marker}')
         else:
             print("  (no wake-word models installed)")
     else:
         print("  (directory does not exist yet)")
-    print(f"\nTrain one:           hey-claude train")
+    print(f"\nActivate one:        hey-claude models use <name>")
+    print(f"Train one:           hey-claude train")
     print(f"Community models:    {COMMUNITY_MODELS}")
     return 0

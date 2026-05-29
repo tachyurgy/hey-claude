@@ -1,0 +1,20 @@
+# Dependencies for training openWakeWord models (torch + torchaudio are installed
+# separately from the CPU index in the workflow). Pinned where it matters:
+# openwakeword 0.6.0 is the API train_wakewords.py + train.py target.
+openwakeword==0.6.0
+piper-tts
+torchinfo
+torchmetrics
+audiomentations
+torch-audiomentations
+acoustics
+pronouncing
+mutagen
+webrtcvad
+datasets
+speechbrain
+scipy
+soundfile
+numpy
+tqdm
+pyyaml
