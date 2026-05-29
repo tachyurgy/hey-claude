@@ -11,7 +11,9 @@ acoustics
 pronouncing
 mutagen
 webrtcvad
-datasets
+# datasets >=3 requires torchcodec for audio encode/decode; <3 uses soundfile,
+# which avoids that extra native dep on fresh runners.
+datasets<3
 speechbrain
 # The training stack predates numpy 2 / scipy 1.15. scipy 1.15 removed
 # scipy.special.sph_harm, which the `acoustics` dep imports at module load.
