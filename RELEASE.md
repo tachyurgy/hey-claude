@@ -24,8 +24,19 @@ gh release create v0.1.0 --title "hey-claude v0.1.0" --generate-notes
 
 ## 2. Update the Homebrew formula with the real tarball hash
 
-The formula in `tachyurgy/homebrew-tap` points at the release tarball. Compute
-its sha256 and patch the formula:
+### Automatic (recommended)
+
+`.github/workflows/release.yml` runs when you publish a release and opens a PR
+against `tachyurgy/homebrew-tap` with the new version + sha256 already filled in.
+It needs a one-time secret:
+
+1. Create a fine-grained PAT with **Contents: read/write** on `tachyurgy/homebrew-tap`.
+2. Add it to the **hey-claude** repo as a secret named `COMMITTER_TOKEN`
+   (`gh secret set COMMITTER_TOKEN --repo tachyurgy/hey-claude`).
+
+After `gh release create`, just merge the PR the workflow opens on the tap.
+
+### Manual (fallback)
 
 ```bash
 URL="https://github.com/tachyurgy/hey-claude/archive/refs/tags/v0.1.0.tar.gz"

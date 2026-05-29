@@ -1,0 +1,22 @@
+name: Release
+
+# When a GitHub release is published, recompute the tarball sha256 and open a PR
+# against the Homebrew tap bumping the formula to the new version. Requires a
+# repo-scoped PAT stored as the COMMITTER_TOKEN secret (see RELEASE.md).
+on:
+  release:
+    types: [published]
+
+jobs:
+  bump-homebrew-formula:
+    runs-on: macos-latest
+    steps:
+      - name: Bump formula in tachyurgy/homebrew-tap
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: hey-claude
+          homebrew-tap: tachyurgy/homebrew-tap
+          download-url: >-
+            https://github.com/tachyurgy/hey-claude/archive/refs/tags/${{ github.event.release.tag_name }}.tar.gz
+        env:
+          COMMITTER_TOKEN: ${{ secrets.COMMITTER_TOKEN }}
