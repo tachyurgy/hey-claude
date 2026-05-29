@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hey-claude"
+version = "0.1.0"
+description = "Say \"Hey Claude\" and dispatch a Claude Code background agent — a fully local, on-device voice wake word for your Mac."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10,<3.14"
+keywords = ["claude", "claude-code", "wake-word", "voice", "whisper", "openwakeword", "macos", "speech-to-text"]
+authors = [{ name = "tachyurgy" }]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: MacOS X",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Software Development :: Build Tools",
+]
+dependencies = [
+    "numpy>=1.24",
+    "sounddevice>=0.4.6",
+    "openwakeword>=0.6.0",
+    "mlx-whisper>=0.4.0; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+
+[project.optional-dependencies]
+# Local wake-word training (heavy; the hosted Colab path is recommended instead).
+train = [
+    "piper-tts>=1.2.0",
+    "torch>=2.0",
+    "datasets>=2.14",
+    "scipy>=1.10",
+]
+dev = [
+    "pytest>=7.4",
+]
+
+[project.urls]
+Homepage = "https://github.com/tachyurgy/hey-claude"
+Repository = "https://github.com/tachyurgy/hey-claude"
+Issues = "https://github.com/tachyurgy/hey-claude/issues"
+
+[project.scripts]
+hey-claude = "hey_claude.cli:main"
+heyclaude = "hey_claude.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hey_claude"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/hey_claude", "packaging", "docs", "tests", "README.md", "LICENSE"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
