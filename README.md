@@ -1,5 +1,10 @@
 # hey-claude
 
+[![CI](https://github.com/tachyurgy/hey-claude/actions/workflows/ci.yml/badge.svg)](https://github.com/tachyurgy/hey-claude/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Python 3.10–3.13](https://img.shields.io/badge/python-3.10–3.13-blue.svg)
+![Platform: macOS (Apple Silicon)](https://img.shields.io/badge/platform-macOS%20·%20Apple%20Silicon-lightgrey.svg)
+
 > Say **"Hey Claude, fix the failing tests"** out loud. A Claude Code agent
 > spins up in the background and gets to work. Fully on-device — no cloud wake
 > word, no API key to listen, no per-user signup.
@@ -199,11 +204,19 @@ agent can act without you watching — scope it deliberately, and consider
 4. **Dispatch** — the text is passed verbatim as a single argument to
    `claude --bg`, which hands it to Claude Code's background-session supervisor.
 
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md) — the four-stage pipeline and why it's built this way
+- [Contributing](CONTRIBUTING.md) — setup, project layout, good first issues
+- [Changelog](CHANGELOG.md)
+- [Release runbook](RELEASE.md) — tagging, Homebrew, PyPI
+
 ## Development
 
 ```bash
 git clone https://github.com/tachyurgy/hey-claude
 cd hey-claude
+brew install portaudio
 python3.12 -m venv .venv && . .venv/bin/activate
 pip install -e ".[dev]"
 pytest
