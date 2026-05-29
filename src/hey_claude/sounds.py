@@ -30,6 +30,34 @@ CANCEL = DEFAULTS["cancel"]
 ERROR = DEFAULTS["error"]
 
 
+# A curated catalog of the built-in macOS system sounds, tagged by the role each
+# fits best. "before" = plays when the wake word fires (your cue to speak the
+# command); "after" = plays when an agent is dispatched. Pick any of these by
+# name with `hey-claude sounds set <event> <name>`.
+CATALOG = {
+    "Tink":      ("before", "light tick — default wake cue"),
+    "Pop":       ("before", "soft pop"),
+    "Morse":     ("before", "two quick blips"),
+    "Purr":      ("before", "gentle rising chirp"),
+    "Bottle":    ("before", "hollow pop"),
+    "Frog":      ("before", "short croak"),
+    "Glass":     ("after",  "bright chime — default dispatch cue"),
+    "Hero":      ("after",  "triumphant swell"),
+    "Submarine": ("after",  "deep sonar ping"),
+    "Blow":      ("after",  "breathy whoosh"),
+    "Ping":      ("after",  "single clear ping"),
+    "Funk":      ("cancel", "downward 'nope' — default cancel cue"),
+    "Sosumi":    ("cancel", "flat beep"),
+    "Basso":     ("error",  "low thud — default error cue"),
+}
+
+
+def catalog_paths() -> dict[str, Path]:
+    """Catalog entries that actually exist on this machine."""
+    return {name: _SOUNDS / f"{name}.aiff" for name in CATALOG
+            if (_SOUNDS / f"{name}.aiff").exists()}
+
+
 def resolve(event: str, override: str = "") -> Optional[Path]:
     """Pick the sound file for an event, honoring a config override.
 

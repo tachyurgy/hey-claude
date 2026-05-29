@@ -73,6 +73,76 @@ def cmd_stop(args): return service.stop()
 def cmd_status(args): return service.status()
 
 
+_SOUND_EVENTS = {
+    "wake": ("sound_wake", "before — plays when the wake word fires"),
+    "dispatch": ("sound_dispatch", "after — plays when an agent is dispatched"),
+    "cancel": ("sound_cancel", "wake fired but no command / cancelled"),
+    "error": ("sound_error", "dispatch failed"),
+}
+
+
+def cmd_sounds(args: argparse.Namespace) -> int:
+    import time as _time
+
+    from . import sounds
+
+    action = args.sounds_action
+    cfg = Config.load()
+
+    if action in (None, "list"):
+        avail = sounds.catalog_paths()
+        print("Sound catalog (built-in macOS sounds) — assign with `hey-claude sounds set <event> <name>`:\n")
+        for role in ("before", "after", "cancel", "error"):
+            names = [n for n, (r, _) in sounds.CATALOG.items() if r == role and n in avail]
+            if names:
+                print(f"  {role}:")
+                for n in names:
+                    print(f"    {n:<11} {sounds.CATALOG[n][1]}")
+        print("\nCurrently assigned:")
+        for ev, (field, desc) in _SOUND_EVENTS.items():
+            val = getattr(cfg, field) or f"(default: {sounds.DEFAULTS[ev].stem})"
+            print(f"  {ev:<9} {val:<22} {desc}")
+        print("\nPreview one:  hey-claude sounds play Glass")
+        print("Use a file:   hey-claude sounds set dispatch /path/to/sound.wav")
+        print("Silence one:  hey-claude sounds set cancel none")
+        return 0
+
+    if action == "play":
+        path = sounds.resolve("wake", args.name)
+        if path is None:
+            print(f"✗ no sound resolved for {args.name!r} (try a catalog name like Glass, or a file path)")
+            return 1
+        print(f"♪ {path}")
+        sounds.play(path, True)
+        _time.sleep(2)
+        return 0
+
+    if action == "set":
+        if args.event not in _SOUND_EVENTS:
+            print(f"✗ event must be one of: {', '.join(_SOUND_EVENTS)}")
+            return 1
+        field = _SOUND_EVENTS[args.event][0]
+        cfg.set_field(field, args.name)
+        resolved = sounds.resolve(args.event, args.name)
+        cfg.save()
+        note = f"→ {resolved}" if resolved else "(silenced)" if args.name.lower() in ("none", "off") else "(not found — will fall back silent)"
+        print(f"✓ {args.event} sound = {args.name!r}  {note}")
+        if resolved:
+            sounds.play(resolved, True)
+            _time.sleep(2)
+        return 0
+
+    if action == "test":
+        for ev in ("wake", "dispatch", "cancel", "error"):
+            field = _SOUND_EVENTS[ev][0]
+            path = sounds.resolve(ev, getattr(cfg, field))
+            print(f"  {ev:<9} {path}")
+            sounds.play(path, True)
+            _time.sleep(1.3)
+        return 0
+    return 1
+
+
 def cmd_config(args: argparse.Namespace) -> int:
     action = args.config_action
     if action == "path":
@@ -152,6 +222,16 @@ def build_parser() -> argparse.ArgumentParser:
     im_p.set_defaults(func=cmd_import_model)
 
     sub.add_parser("models", help="list installed wake-word models").set_defaults(func=cmd_models)
+
+    snd_p = sub.add_parser("sounds", help="browse / preview / assign earcons")
+    snd_sub = snd_p.add_subparsers(dest="sounds_action")
+    snd_sub.add_parser("list", help="show the catalog and current assignments")
+    sp = snd_sub.add_parser("play", help="preview a sound by catalog name or file path"); sp.add_argument("name")
+    ss = snd_sub.add_parser("set", help="assign a sound to an event")
+    ss.add_argument("event", help="wake | dispatch | cancel | error")
+    ss.add_argument("name", help="catalog name, file path, system-sound name, or 'none'")
+    snd_sub.add_parser("test", help="play all four currently-assigned event sounds")
+    snd_p.set_defaults(func=cmd_sounds)
 
     app_p = sub.add_parser("app", help="build a .app wrapper (stable mic permission)")
     app_p.add_argument("dest", nargs="?", help="output path (default: ~/Applications/Hey Claude.app)")
