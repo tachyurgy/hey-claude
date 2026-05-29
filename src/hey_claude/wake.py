@@ -17,9 +17,10 @@ import re
 import time
 from difflib import SequenceMatcher
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-import numpy as np
+if TYPE_CHECKING:  # numpy is only referenced in type hints here
+    import numpy as np
 
 _WORD = re.compile(r"[a-z']+")
 # Tolerated mishearings of the two phrase tokens, so "hey, Claude" / "hi Claude"
