@@ -43,6 +43,10 @@ FAST = os.environ.get("FAST") == "1"
 POS_SPEAKERS = int(os.environ.get("POS_SPEAKERS", "40" if FAST else "150"))
 N_ADV = int(os.environ.get("N_ADV", "60" if FAST else "200"))
 STEPS = int(os.environ.get("STEPS", "3000" if FAST else "12000"))
+# Negative pressure. High values + a low FP target maximize precision but can
+# crush recall on phrases that sound like common words ("claude" vs "cloud").
+MAX_NEG_WEIGHT = int(os.environ.get("MAX_NEG_WEIGHT", "1500"))
+TARGET_FP = float(os.environ.get("TARGET_FP", "0.2"))
 NEG_FEATURES = "validation_set_features.npy" if FAST else "openwakeword_features_ACAV100M_2000_hrs_16bit.npy"
 LEN_SCALES = [0.85, 1.0, 1.15]
 NEG_GENERIC = [
@@ -199,7 +203,7 @@ def train_phrase(phrase: str) -> str | None:
         "feature_data_files": {"ACAV100M_sample": os.path.abspath(os.path.join(DATA, NEG_FEATURES))},
         "batch_n_per_class": {"ACAV100M_sample": 1024, "adversarial_negative": 50, "positive": 50},
         "model_type": "dnn", "layer_size": 32, "steps": STEPS,
-        "max_negative_weight": 1500, "target_false_positives_per_hour": 0.2,
+        "max_negative_weight": MAX_NEG_WEIGHT, "target_false_positives_per_hour": TARGET_FP,
     }
     cfgpath = os.path.abspath(f"{name}.yaml")
     yaml.dump(cfg, open(cfgpath, "w"))
