@@ -13,8 +13,10 @@ mutagen
 webrtcvad
 datasets
 speechbrain
-scipy
+# The training stack predates numpy 2 / scipy 1.15. scipy 1.15 removed
+# scipy.special.sph_harm, which the `acoustics` dep imports at module load.
+scipy<1.15
+numpy<2
 soundfile
-numpy
 tqdm
 pyyaml

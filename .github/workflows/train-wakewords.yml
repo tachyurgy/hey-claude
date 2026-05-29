@@ -18,6 +18,11 @@ on:
         description: "Training steps per phrase"
         required: false
         default: "12000"
+      fast:
+        description: "Fast validation run (1 phrase, tiny data, no 16GB download)"
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   train:
@@ -50,6 +55,7 @@ jobs:
         env:
           POS_SPEAKERS: ${{ github.event.inputs.pos_speakers }}
           STEPS: ${{ github.event.inputs.steps }}
+          FAST: ${{ github.event.inputs.fast == 'true' && '1' || '0' }}
         run: |
           IFS=';' read -ra PHR <<< "${{ github.event.inputs.phrases }}"
           echo "Training: ${PHR[@]}"

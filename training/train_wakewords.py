@@ -37,9 +37,13 @@ from piper import PiperVoice, SynthesisConfig
 
 OUT = "wakeword_models"
 DATA = "train_data"
-POS_SPEAKERS = int(os.environ.get("POS_SPEAKERS", "150"))
-N_ADV = int(os.environ.get("N_ADV", "200"))
-STEPS = int(os.environ.get("STEPS", "12000"))
+# FAST: validate the whole pipeline cheaply — one phrase, tiny dataset, and the
+# small validation feature set as negatives (skips the 16 GB ACAV download).
+FAST = os.environ.get("FAST") == "1"
+POS_SPEAKERS = int(os.environ.get("POS_SPEAKERS", "40" if FAST else "150"))
+N_ADV = int(os.environ.get("N_ADV", "60" if FAST else "200"))
+STEPS = int(os.environ.get("STEPS", "3000" if FAST else "12000"))
+NEG_FEATURES = "validation_set_features.npy" if FAST else "openwakeword_features_ACAV100M_2000_hrs_16bit.npy"
 LEN_SCALES = [0.85, 1.0, 1.15]
 NEG_GENERIC = [
     "okay google", "hey computer", "turn on the lights", "what time is it", "play some music",
@@ -110,7 +114,7 @@ def download_shared_data() -> None:
                 scipy.io.wavfile.write(f"background_clips/bg_{i}.wav", 16000, row_to_int16(row))
 
         # precomputed negative (16 GB) + validation features
-        if not os.path.exists("openwakeword_features_ACAV100M_2000_hrs_16bit.npy"):
+        if not FAST and not os.path.exists("openwakeword_features_ACAV100M_2000_hrs_16bit.npy"):
             sh("wget -q https://huggingface.co/datasets/davidscripka/openwakeword_features/resolve/main/openwakeword_features_ACAV100M_2000_hrs_16bit.npy")
         if not os.path.exists("validation_set_features.npy"):
             sh("wget -q https://huggingface.co/datasets/davidscripka/openwakeword_features/resolve/main/validation_set_features.npy")
@@ -192,7 +196,7 @@ def train_phrase(phrase: str) -> str | None:
         "background_paths_duplication_rate": [1],
         "false_positive_validation_data_path": os.path.abspath(os.path.join(DATA, "validation_set_features.npy")),
         "augmentation_rounds": 1,
-        "feature_data_files": {"ACAV100M_sample": os.path.abspath(os.path.join(DATA, "openwakeword_features_ACAV100M_2000_hrs_16bit.npy"))},
+        "feature_data_files": {"ACAV100M_sample": os.path.abspath(os.path.join(DATA, NEG_FEATURES))},
         "batch_n_per_class": {"ACAV100M_sample": 1024, "adversarial_negative": 50, "positive": 50},
         "model_type": "dnn", "layer_size": 32, "steps": STEPS,
         "max_negative_weight": 1500, "target_false_positives_per_hour": 0.2,
@@ -216,7 +220,9 @@ def train_phrase(phrase: str) -> str | None:
 
 def main() -> int:
     phrases = sys.argv[1:] or ["hey claude"]
-    print("phrases:", phrases, flush=True)
+    if FAST:
+        phrases = phrases[:1]
+    print("phrases:", phrases, "FAST=", FAST, flush=True)
     download_shared_data()
     load_voice()
     os.makedirs(OUT, exist_ok=True)
