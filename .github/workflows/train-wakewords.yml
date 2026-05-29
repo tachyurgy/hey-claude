@@ -46,7 +46,10 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg libsndfile1
           python -m pip install --upgrade pip
-          pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          # torchaudio >=2.8 routes torchaudio.load() through torchcodec; 2.2.2 uses
+          # the soundfile backend (no torchcodec native dep) and matches the era of
+          # the openWakeWord training code.
+          pip install torch==2.2.2 torchaudio==2.2.2 --index-url https://download.pytorch.org/whl/cpu
 
       - name: Install training dependencies
         run: pip install -r training/requirements.txt
