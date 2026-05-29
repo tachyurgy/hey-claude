@@ -22,3 +22,5 @@ numpy<2
 soundfile
 tqdm
 pyyaml
+# torch.onnx.export needs the onnx package to serialize the trained model
+onnx
