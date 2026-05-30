@@ -24,3 +24,6 @@ models/
 # Local config / logs
 *.log
 .hey-claude-local/
+
+# Local Colab CDP automation (superseded by training/train_wakewords.py)
+tools/
