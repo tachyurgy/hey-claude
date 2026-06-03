@@ -24,8 +24,27 @@ transcribes it locally, and dispatches it as a background agent with
 ```
 
 Everything before the final step stays on your machine. The only thing that
-leaves is the command you ask Claude Code to run — and that goes exactly where
-Claude Code already sends it.
+leaves is the command you ask your agent to run — and that goes exactly where
+that agent already sends it.
+
+> **The story behind it:** [I taught my Mac to launch coding agents when I say
+> "Hey Claude"](https://consulting.levelbrook.com/writing/hey-claude-on-device-wake-word/)
+> — the on-device pipeline, and how the wake words were trained on free cloud GPUs.
+
+---
+
+## Work with us
+
+`hey-claude` is built and maintained by **[Levelbrook Consulting](https://consulting.levelbrook.com)**,
+a senior software engineering practice. The same care that went into the
+on-device audio pipeline, the safe single-argv dispatch, and the
+trained-from-scratch wake words is the care we bring to client work: Ruby/Rails,
+Python, AWS, and AI tooling that has to survive production.
+
+**We take on contract work — corp-to-corp, remote, Pacific Time.** If you're
+building agent-driven tooling, voice/ML features, or just need senior hands on a
+Rails or Python system, [get in touch →](mailto:levelbrookteam@gmail.com?subject=Engineering%20consulting%20inquiry)
+or read [how we work](https://consulting.levelbrook.com).
 
 ---
 
@@ -54,27 +73,23 @@ hey-claude doctor
 
 ## Quickstart
 
-```bash
-# 1. Get a free "hey claude" wake-word model (no microphone, ~10 min, trains in your browser)
-hey-claude train
-hey-claude import-model ~/Downloads/hey_claude.onnx
+It works the moment it's installed — a **"hey claude" wake word ships in the
+box**, so there's no training step to start:
 
-# 2. Start listening
-hey-claude
+```bash
+hey-claude          # starts listening with the bundled "hey claude" model
 ```
 
 Now say: **"Hey Claude, add type hints to utils.py and run the tests."**
 You'll hear a chime, then a confirmation, and a new row appears in `claude agents`.
 
-**Don't want to train anything?** The fallback engine needs no model and works immediately:
+Want a different trigger phrase? Several wake words ship bundled — switch with one
+command (see [Bundled wake words](#bundled-wake-words-mileage-may-vary)):
 
 ```bash
-hey-claude config set engine whisper
-hey-claude
+hey-claude models             # list the bundled + installed models
+hey-claude models use hey_computer
 ```
-
-It transcribes each utterance with Whisper and matches the phrase directly —
-zero setup, slightly more CPU than the dedicated wake model.
 
 ## Microphone permission (the one macOS gotcha)
 
@@ -93,45 +108,103 @@ macOS grants microphone access to an app with a *stable identity*. There are two
 
   Then add it to **System Settings → General → Login Items** to start at login.
 
-## Training your wake word
+## Bundled wake words (mileage may vary)
+
+Several openWakeWord models ship in the box, so you can pick a trigger phrase
+without training anything:
+
+| Model | Say | Notes |
+|---|---|---|
+| `hey_claude` *(default)* | "hey claude" | the phrase the tool is named for |
+| `okay_claude` | "okay claude" | alternate Claude trigger |
+| `hey_computer` | "hey computer" | Star-Trek style, distinct from any product name |
+| `hey_assistant` | "hey assistant" | generic, agent-neutral |
+| `hey_agent` | "hey agent" | generic, agent-neutral |
+
+```bash
+hey-claude models                 # list bundled + installed, shows the active one
+hey-claude models use hey_computer
+```
+
+**Mileage may vary.** These are small models trained on a modest synthetic-speech
+budget — they're speaker-independent, but real-world accuracy and the
+false-positive rate depend on your mic, room, and accent. If one fires too often,
+raise `threshold`; if it misses you, lower it. If none are reliable enough, train
+your own dialed-in model (next section).
+
+### Training your own wake word
 
 openWakeWord models are trained on **100% synthetic speech** — you never record
-your voice, and the result is speaker-independent (it responds to anyone). The
-fastest free path is the official Colab notebook:
+your voice, and the result is speaker-independent. The fastest free path is the
+official Colab notebook:
 
 ```bash
 hey-claude train        # opens the notebook + prints the steps
 ```
 
-Set the phrase to `hey claude`, pick a free T4 GPU, *Run all* (~10 min), download
-`hey_claude.onnx`, then `hey-claude import-model <path>`. See
-[openWakeWord](https://github.com/dscripka/openWakeWord) for details.
+Set the phrase, pick a free T4 GPU, *Run all* (~10 min), download the `.onnx`,
+then `hey-claude import-model <path>`. See
+[openWakeWord](https://github.com/dscripka/openWakeWord) for details. There's a
+headless, scriptable version of the same recipe in
+[`training/train_wakewords.py`](training/train_wakewords.py).
+
+**No model at all?** The fallback engine matches the phrase from a Whisper
+transcript with zero setup (slightly more CPU):
+
+```bash
+hey-claude config set engine whisper
+```
 
 ## Configuration
 
-Config lives at `~/.config/hey-claude/config.toml` (`hey-claude config path`).
-Inspect and change it with the CLI or edit the file directly:
+Everything is configurable two ways — the CLI, or by editing the config file
+directly. Config lives at `~/.config/hey-claude/config.toml`
+(`hey-claude config path`):
 
 ```bash
-hey-claude config show
-hey-claude config set launch_mode terminal
-hey-claude config edit
+hey-claude config show                       # print every setting
+hey-claude config set threshold 0.6          # change one from the CLI
+hey-claude config edit                       # open the TOML in $EDITOR
 ```
 
-### Launch modes — how a heard command becomes an agent
+The file is plain TOML — `hey-claude config edit` just opens it; any key in the
+table below can be set there by hand and takes effect on next start.
 
-| `launch_mode` | What happens |
+## Launch any agent — not just Claude
+
+A wake doesn't *have* to run `claude`. It runs whatever agent you point it at.
+Switch with one command:
+
+```bash
+hey-claude agent list                # see the presets + which is active
+hey-claude agent use codex           # now "hey claude, <task>" drives Codex
+```
+
+| Preset | What a heard command runs |
 |---|---|
-| `bg` *(default)* | `claude --bg "<command>"` — detached background agent, watch it in `claude agents` |
-| `terminal` | opens a new Terminal running `claude "<command>"` so you can supervise/approve |
-| `print` | `claude -p "<command>"` headless one-shot, output appended to the log |
+| `claude-bg` *(default)* | `claude --bg "<command>"` — detached background agent, watch it in `claude agents` |
+| `claude-terminal` | a new Terminal running `claude "<command>"` so you can supervise/approve |
+| `claude-print` | `claude -p "<command>"` headless one-shot, output appended to the log |
+| `codex` | `codex exec "<command>"` — OpenAI Codex CLI |
+| `aider` | `aider --yes --message "<command>"` |
+| `opencode` | `opencode run "<command>"` |
+| `gemini` | `gemini --prompt "<command>"` |
 
-### Configurable invoke command
+The external presets are honest starting points — third-party CLIs change their
+flags, so confirm yours and tune the template.
 
-Override the invocation entirely with `launch_template` (in the config). It's a
-shell-style token list; placeholders are substituted **per token**, and the
-`{command}` token is always passed as a *single* argument, so a spoken command
-can never inject extra flags or shell metacharacters:
+### Fully custom — any command at all
+
+Under the hood every preset just sets `launch_template`, which you can write
+yourself. It's a shell-style token list; placeholders are substituted **per
+token**, and the `{command}` token is always passed as a *single* argument, so a
+spoken command can never inject extra flags or shell metacharacters:
+
+```bash
+hey-claude config set launch_template 'my-agent --name {name} --prompt {command}'
+```
+
+Or in the file directly:
 
 ```toml
 # ~/.config/hey-claude/config.toml
@@ -139,6 +212,8 @@ launch_template = 'claude --bg --name {name} --permission-mode acceptEdits --mod
 ```
 
 Placeholders: `{command}` `{name}` `{permission_mode}` `{model}` `{claude_bin}`.
+Leave `launch_template` empty to use the native `claude` launch modes (which keep
+full support for `permission_mode`, `claude_model`, and `max_concurrent`).
 
 ### Configurable sounds
 
@@ -164,9 +239,11 @@ hey-claude config set chime false                # disable all sounds
 | Key | Default | Notes |
 |---|---|---|
 | `engine` | `openwakeword` | or `whisper` (no model file needed) |
+| `wakeword_model` | `""` | bundled name (`hey_claude`…), a path, or empty for the default |
 | `wake_phrase` | `hey claude` | also used by the whisper engine |
 | `threshold` | `0.5` | openWakeWord score; higher = fewer false positives |
 | `whisper_model` | `mlx-community/whisper-large-v3-turbo` | command transcription |
+| `launch_template` | `""` | run any agent; empty = native `claude` modes (see above) |
 | `permission_mode` | `""` | e.g. `acceptEdits`, `plan` for dispatched agents |
 | `claude_model` | `""` | model for dispatched agents |
 | `max_concurrent` | `0` | 0 = unlimited; else refuse to dispatch past N live bg sessions |
@@ -206,6 +283,7 @@ agent can act without you watching — scope it deliberately, and consider
 
 ## Documentation
 
+- [The build log](https://consulting.levelbrook.com/writing/hey-claude-on-device-wake-word/) — how it works and how the wake words were trained (Levelbrook engineering blog)
 - [Architecture](docs/ARCHITECTURE.md) — the four-stage pipeline and why it's built this way
 - [Contributing](CONTRIBUTING.md) — setup, project layout, good first issues
 - [Changelog](CHANGELOG.md)
@@ -225,3 +303,10 @@ pytest
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+---
+
+Built and maintained by **[Levelbrook Consulting](https://consulting.levelbrook.com)** —
+a senior software engineering practice (Rails · Python · AWS · AI tooling).
+Available for contract work, corp-to-corp.
+[Get in touch →](mailto:levelbrookteam@gmail.com?subject=Engineering%20consulting%20inquiry)
