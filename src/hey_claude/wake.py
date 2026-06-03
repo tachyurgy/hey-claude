@@ -130,6 +130,24 @@ class OpenWakeWordEngine:
         self._last_fire = now
         return True
 
+    def reset(self) -> None:
+        """Clear the model's rolling prediction buffer and re-arm the refractory
+        window. Call this *after* handling a command.
+
+        The wake phrase spans ~1 s (~12 frames), so its activation lingers in
+        openWakeWord's internal buffer across many frames. Capturing,
+        transcribing, and dispatching the command takes several seconds — long
+        enough that the 2 s refractory measured from the *detection* has already
+        expired by the time we resume. Without clearing the buffer and restarting
+        the clock here, the very next frames re-score the same lingering "hey
+        claude" and fire again, storming the loop with phantom detections."""
+        if self._model is not None:
+            try:
+                self._model.reset()
+            except Exception:  # best-effort; never crash the listen loop
+                pass
+        self._last_fire = time.monotonic()
+
 
 class WhisperWakeEngine:
     """Utterance-level wake matcher for the no-model fallback engine."""

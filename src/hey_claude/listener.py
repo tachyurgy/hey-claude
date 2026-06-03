@@ -132,7 +132,12 @@ class Listener:
                 if engine.process(frame):
                     self._say(f'\n👂 "{self.cfg.wake_phrase}" detected')
                     self._capture_then_dispatch(mic)
-                    mic.drain()  # discard anything buffered while we were busy
+                    # Clear the wake-word activation still sitting in the model's
+                    # buffer and re-arm the refractory window, then drop any audio
+                    # captured while we were busy — otherwise the lingering "hey
+                    # claude" (or chime/agent feedback) re-fires immediately.
+                    engine.reset()
+                    mic.drain()
 
     def _run_whisper(self) -> None:
         matcher = WhisperWakeEngine(self.cfg.wake_phrase)
