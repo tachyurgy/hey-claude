@@ -6,6 +6,22 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- **Bundled wake words** — five openWakeWord models ship as package data
+  (`hey_claude` default, plus `okay_claude`, `hey_computer`, `hey_assistant`,
+  `hey_agent`), so the tool works the moment it's installed with no training
+  step. `models` lists them with a "mileage may vary" note; `models use <name>`
+  activates a bundled model by name.
+- **Agent-agnostic dispatch** — `agent list/use/show` and a preset registry
+  (`claude-bg`/`claude-terminal`/`claude-print`, plus `codex`/`aider`/`opencode`/
+  `gemini` starting points). A wake can drive any agent CLI; the `claude` binary
+  is only required when the active template references it.
+
+### Changed
+- `config.resolve_wakeword()` resolves an explicit path, a bundled name, or an
+  installed model, falling back to the bundled `hey_claude` so a fresh install
+  listens immediately.
+
 ## [0.1.0] — initial release
 
 ### Added

@@ -97,7 +97,16 @@ Then repeat steps 1–3 with the new tag.
 
 - [ ] Both repos public
 - [ ] `v0.1.0` release with notes
+- [ ] Bundled wake words land in the wheel: `python -m build --wheel` then
+      `unzip -l dist/*.whl | grep models/.*onnx` shows all five `.onnx` files
+- [ ] Fresh install listens with **no training step** (`hey-claude` just works);
+      `hey-claude agent use codex` retargets the agent
 - [ ] Formula sha256 updated; `brew install tachyurgy/tap/hey-claude` works on a clean machine
 - [ ] `pip install hey-claude` works in a fresh 3.12 venv
 - [ ] README GIF/asciinema of "Hey Claude, …" → a row appearing in `claude agents`
 - [ ] `hey-claude doctor` output looks clean on a fresh setup
+- [ ] **Deploy the Levelbrook site at the same time** so the cross-links resolve:
+      the README + blog point at `github.com/tachyurgy/hey-claude` (404s until the
+      repo is public), and the `~/Desktop/c2c/site` blog post + portfolio card are
+      staged but **not deployed** — push the `consulting-levelbrook` Pages project
+      so consulting.levelbrook.com/writing/hey-claude-on-device-wake-word/ goes live

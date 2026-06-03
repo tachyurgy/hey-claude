@@ -41,10 +41,11 @@ class HeyClaude < Formula
       hey-claude needs Claude Code (>= 2.1.139) on your PATH:
         https://code.claude.com   →   then run:  claude --version
 
-      First-run setup:
+      First-run setup (a "hey claude" wake word ships in the box — no training):
         hey-claude doctor          # checks mic, claude, models
-        hey-claude train           # get a free "hey claude" wake-word model
-        hey-claude                 # start listening
+        hey-claude                 # start listening immediately
+        hey-claude models          # see / switch bundled wake words
+        hey-claude agent use codex # optional: drive a different agent CLI
 
       Microphone permission: grant it to your terminal on first run, or build a
       permission-stable app:
