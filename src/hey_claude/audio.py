@@ -130,7 +130,8 @@ def _rms(frame: np.ndarray) -> float:
 def record_command(
     mic: Microphone,
     *,
-    silence_ms: int = 800,
+    silence_ms: int = 1000,
+    grace_ms: int = 2000,
     max_seconds: float = 15.0,
     preroll_ms: int = 300,
     start_rms: float = 0.012,
@@ -139,6 +140,15 @@ def record_command(
     onset_timeout_s: float = 4.0,
 ) -> Optional[np.ndarray]:
     """Capture the spoken command after the wake word.
+
+    Endpointing uses a **two-phase** trailing-silence window so an indecisive
+    speaker who pauses to think isn't cut off mid-command:
+
+    * while they've barely spoken (less than ``min_speech_ms`` of voiced audio so
+      far — i.e. still gathering their thought), a pause is tolerated up to the
+      longer ``grace_ms`` before giving up, and
+    * once a real command has been spoken, a normal ``silence_ms`` of trailing
+      quiet ends the capture so dispatch stays snappy.
 
     Returns a float32 array in [-1, 1] at the mic's sample rate, or ``None`` if
     nothing worth transcribing was captured. ``None`` happens in two cases:
@@ -153,6 +163,7 @@ def record_command(
     """
     frame_ms = FRAME_SAMPLES / mic.samplerate * 1000.0
     silence_frames = max(1, int(silence_ms / frame_ms))
+    grace_frames = max(silence_frames, int(grace_ms / frame_ms))
     preroll_frames = max(0, int(preroll_ms / frame_ms))
     onset_frames = max(1, int(onset_timeout_s * 1000 / frame_ms))
     max_frames = max(1, int(max_seconds * 1000 / frame_ms))
@@ -164,6 +175,7 @@ def record_command(
     silent_run = 0
     voiced_frames = 0  # frames above keep_rms — the real "how much did they say"
     waited = 0
+    stalls = 0  # consecutive empty reads while capturing (mic stalled / stopped)
 
     while len(captured) < max_frames:
         frame = mic.read(timeout=1.0)
@@ -172,7 +184,15 @@ def record_command(
                 waited += int(1000 / frame_ms)
                 if waited >= onset_frames:
                     return None
+            else:
+                # No audio arrived for ~1s mid-capture: the stream stalled or was
+                # stopped. End the utterance rather than wait on a dead mic — the
+                # grace window only protects against *quiet*, not silence-of-no-frames.
+                stalls += 1
+                if stalls >= 2:
+                    break
             continue
+        stalls = 0
 
         level = _rms(frame)
         if not started:
@@ -193,7 +213,11 @@ def record_command(
                 silent_run = 0
             else:
                 silent_run += 1
-                if silent_run >= silence_frames:
+                # Long grace while they're still mid-thought (little said yet),
+                # tightening to the normal trailing window once a real command
+                # has landed.
+                limit = silence_frames if voiced_frames >= min_voiced_frames else grace_frames
+                if silent_run >= limit:
                     break
 
     if not captured:
