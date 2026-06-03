@@ -16,6 +16,11 @@ to [Semantic Versioning](https://semver.org/).
   (`claude-bg`/`claude-terminal`/`claude-print`, plus `codex`/`aider`/`opencode`/
   `gemini` starting points). A wake can drive any agent CLI; the `claude` binary
   is only required when the active template references it.
+- **"Stopped listening" earcon** — a new `endpoint` sound event (default `Pop`)
+  fires the instant command capture ends, before the silent transcription gap —
+  the Siri-style second tone to pair with the `wake` start tone. Configurable
+  like the others (`sounds set endpoint <name>` / `config set sound_endpoint`,
+  `none` to silence) and included in `sounds list`/`sounds test`.
 - **Full teardown** — `uninstall --all` removes everything a package manager
   can't reach: the launchd agent, the config dir + trained wake-word models, and
   the `~/Applications` `.app` bundle. It confirms before deleting (skip with

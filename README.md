@@ -227,9 +227,13 @@ hey-claude config set sound_cancel none
 hey-claude config set chime false                # disable all sounds
 ```
 
+There are two listening cues, Siri-style: `sound_wake` when it starts listening
+and `sound_endpoint` the moment you stop talking and it begins transcribing.
+
 | Event | Default | When it plays |
 |---|---|---|
 | `sound_wake` | Tink | the wake word was detected — start talking |
+| `sound_endpoint` | Pop | you stopped talking; capture ended, now transcribing |
 | `sound_dispatch` | Glass | an agent was successfully dispatched |
 | `sound_cancel` | Funk | wake fired but no command followed / you cancelled |
 | `sound_error` | Basso | dispatch failed |
@@ -294,9 +298,10 @@ agent can act without you watching — scope it deliberately, and consider
 1. **Wake** — openWakeWord runs a ~250 KB classifier over a frozen Google speech
    embedding on each 80 ms frame. A score above `threshold` (outside a short
    refractory window) is a wake. Lowest possible CPU for always-on listening.
-2. **Endpoint** — once woken, a small energy VAD records the command and stops
-   after ~800 ms of trailing silence, keeping a short pre-roll so the first
-   syllable isn't clipped.
+2. **Endpoint** — once woken (and after the `wake` cue plays), a small energy VAD
+   records the command and stops after ~800 ms of trailing silence, keeping a
+   short pre-roll so the first syllable isn't clipped. The moment it stops, the
+   `endpoint` cue plays so you know it heard you and is now thinking.
 3. **Transcribe** — the command audio goes to MLX Whisper (Metal GPU), which
    returns text in well under a second on Apple Silicon.
 4. **Dispatch** — the text is passed verbatim as a single argument to

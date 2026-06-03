@@ -13,11 +13,13 @@ from typing import Optional
 
 _SOUNDS = Path("/System/Library/Sounds")
 
-# Built-in defaults. Tink = "I heard you, go ahead"; Glass = "agent dispatched";
-# Funk = "nothing happened"; Basso = "error". Override any of these per-event in
-# the config (sound_wake / sound_dispatch / sound_cancel / sound_error).
+# Built-in defaults. Tink = "I heard you, go ahead"; Pop = "got it, I stopped
+# listening"; Glass = "agent dispatched"; Funk = "nothing happened"; Basso =
+# "error". Override any per-event in the config (sound_wake / sound_endpoint /
+# sound_dispatch / sound_cancel / sound_error).
 DEFAULTS = {
     "wake": _SOUNDS / "Tink.aiff",
+    "endpoint": _SOUNDS / "Pop.aiff",
     "dispatch": _SOUNDS / "Glass.aiff",
     "cancel": _SOUNDS / "Funk.aiff",
     "error": _SOUNDS / "Basso.aiff",
@@ -25,22 +27,24 @@ DEFAULTS = {
 
 # Backwards-friendly module constants.
 WAKE = DEFAULTS["wake"]
+ENDPOINT = DEFAULTS["endpoint"]
 DISPATCH = DEFAULTS["dispatch"]
 CANCEL = DEFAULTS["cancel"]
 ERROR = DEFAULTS["error"]
 
 
 # A curated catalog of the built-in macOS system sounds, tagged by the role each
-# fits best. "before" = plays when the wake word fires (your cue to speak the
-# command); "after" = plays when an agent is dispatched. Pick any of these by
-# name with `hey-claude sounds set <event> <name>`.
+# fits best. "before" = plays when the wake word fires (your cue to speak);
+# "endpoint" = plays when you stop talking and capture ends; "after" = plays
+# when an agent is dispatched. Pick any of these by name with
+# `hey-claude sounds set <event> <name>`.
 CATALOG = {
     "Tink":      ("before", "light tick — default wake cue"),
-    "Pop":       ("before", "soft pop"),
-    "Morse":     ("before", "two quick blips"),
     "Purr":      ("before", "gentle rising chirp"),
-    "Bottle":    ("before", "hollow pop"),
     "Frog":      ("before", "short croak"),
+    "Pop":       ("endpoint", "soft pop — default 'stopped listening' cue"),
+    "Morse":     ("endpoint", "two quick blips"),
+    "Bottle":    ("endpoint", "hollow pop"),
     "Glass":     ("after",  "bright chime — default dispatch cue"),
     "Hero":      ("after",  "triumphant swell"),
     "Submarine": ("after",  "deep sonar ping"),
@@ -95,6 +99,10 @@ def play(sound: Optional[Path], enabled: bool = True) -> None:
 
 def wake(enabled: bool = True) -> None:
     play(DEFAULTS["wake"], enabled)
+
+
+def endpoint(enabled: bool = True) -> None:
+    play(DEFAULTS["endpoint"], enabled)
 
 
 def dispatch(enabled: bool = True) -> None:

@@ -128,6 +128,7 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
 
 _SOUND_EVENTS = {
     "wake": ("sound_wake", "before — plays when the wake word fires"),
+    "endpoint": ("sound_endpoint", "endpoint — plays when you stop talking / capture ends"),
     "dispatch": ("sound_dispatch", "after — plays when an agent is dispatched"),
     "cancel": ("sound_cancel", "wake fired but no command / cancelled"),
     "error": ("sound_error", "dispatch failed"),
@@ -145,7 +146,7 @@ def cmd_sounds(args: argparse.Namespace) -> int:
     if action in (None, "list"):
         avail = sounds.catalog_paths()
         print("Sound catalog (built-in macOS sounds) — assign with `hey-claude sounds set <event> <name>`:\n")
-        for role in ("before", "after", "cancel", "error"):
+        for role in ("before", "endpoint", "after", "cancel", "error"):
             names = [n for n, (r, _) in sounds.CATALOG.items() if r == role and n in avail]
             if names:
                 print(f"  {role}:")
@@ -186,7 +187,7 @@ def cmd_sounds(args: argparse.Namespace) -> int:
         return 0
 
     if action == "test":
-        for ev in ("wake", "dispatch", "cancel", "error"):
+        for ev in ("wake", "endpoint", "dispatch", "cancel", "error"):
             field = _SOUND_EVENTS[ev][0]
             path = sounds.resolve(ev, getattr(cfg, field))
             print(f"  {ev:<9} {path}")
@@ -295,7 +296,7 @@ def build_parser() -> argparse.ArgumentParser:
     snd_sub.add_parser("list", help="show the catalog and current assignments")
     sp = snd_sub.add_parser("play", help="preview a sound by catalog name or file path"); sp.add_argument("name")
     ss = snd_sub.add_parser("set", help="assign a sound to an event")
-    ss.add_argument("event", help="wake | dispatch | cancel | error")
+    ss.add_argument("event", help="wake | endpoint | dispatch | cancel | error")
     ss.add_argument("name", help="catalog name, file path, system-sound name, or 'none'")
     snd_sub.add_parser("test", help="play all four currently-assigned event sounds")
     snd_p.set_defaults(func=cmd_sounds)

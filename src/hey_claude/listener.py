@@ -30,6 +30,7 @@ class Listener:
     def _chime(self, event: str) -> None:
         override = {
             "wake": self.cfg.sound_wake,
+            "endpoint": self.cfg.sound_endpoint,
             "dispatch": self.cfg.sound_dispatch,
             "cancel": self.cfg.sound_cancel,
             "error": self.cfg.sound_error,
@@ -91,6 +92,10 @@ class Listener:
             self._say("  … no command heard.")
             self._chime("cancel")
             return
+        # Capture ended (you stopped talking) — cue that before the silent
+        # transcription gap, so you know it heard you and is now thinking.
+        self._chime("endpoint")
+        self._say("  · got it — transcribing…")
         try:
             text = transcribe(audio, self.cfg.whisper_model)
         except TranscribeError as exc:

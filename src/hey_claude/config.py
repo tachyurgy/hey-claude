@@ -125,7 +125,8 @@ class Config:
     verbose: bool = True
     # Sound overrides — absolute paths to .aiff/.wav/.mp3 etc. Empty => built-in
     # macOS system sound. Set to "none" to silence just that one event.
-    sound_wake: str = ""      # played when the wake word is detected
+    sound_wake: str = ""      # played when the wake word is detected (start of listening)
+    sound_endpoint: str = ""  # played when command capture ends (you stopped talking)
     sound_dispatch: str = ""  # played when an agent is dispatched
     sound_cancel: str = ""    # played when a wake fires but no command follows
     sound_error: str = ""     # played when dispatch fails
