@@ -53,9 +53,10 @@ hey-claude = "hey_claude.cli:main"
 heyclaude = "hey_claude.cli:main"
 
 # The bundled wake-word models are git-ignored as a class (*.onnx), so list them
-# as build artifacts to force them into the wheel + sdist as package data.
+# as build artifacts to force them into the wheel + sdist as package data. The
+# synthesized earcons (*.wav) are listed too so they're always packaged.
 [tool.hatch.build]
-artifacts = ["src/hey_claude/models/*.onnx"]
+artifacts = ["src/hey_claude/models/*.onnx", "src/hey_claude/earcons/*.wav"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hey_claude"]

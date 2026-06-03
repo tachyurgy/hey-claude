@@ -99,6 +99,8 @@ class Config:
     preroll_ms: int = 300  # audio kept from just before speech starts (anti-clip)
     vad_start_rms: float = 0.012  # RMS above this counts as speech onset
     vad_keep_rms: float = 0.008  # RMS above this sustains an in-progress utterance
+    min_command_ms: int = 350  # energy gate: drop captures with less real speech than
+    #                            this (stops near-silence → Whisper hallucination)
     whisper_model: str = "mlx-community/whisper-large-v3-turbo"  # command transcription
     whisper_wake_model: str = "mlx-community/whisper-tiny"  # used only by the whisper engine
 

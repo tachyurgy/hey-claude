@@ -12,7 +12,11 @@ EVENTS = ("wake", "endpoint", "dispatch", "cancel", "error")
 def test_endpoint_has_a_default_sound():
     assert "endpoint" in sounds.DEFAULTS
     assert sounds.resolve("endpoint") == sounds.DEFAULTS["endpoint"]
-    assert sounds.DEFAULTS["endpoint"].name == "Pop.aiff"
+    # Default is the bundled custom earcon (falls back to a system sound only if
+    # the packaged .wav is missing).
+    default = sounds.DEFAULTS["endpoint"]
+    assert default.name in ("endpoint.wav", "Pop.aiff")
+    assert default.exists()
 
 
 def test_every_event_resolves_and_is_overridable():

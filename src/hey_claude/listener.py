@@ -78,6 +78,10 @@ class Listener:
 
     def _capture_then_dispatch(self, mic: Microphone) -> None:
         """openWakeWord path: record the command after the wake word."""
+        # Discard the tail of the wake word (and the wake chime) still sitting in
+        # the queue, so command capture doesn't trigger its onset on "…laude" and
+        # then end on your natural pause before you've actually said anything.
+        mic.drain()
         self._chime("wake")
         self._say("🎙  listening for your command…")
         audio = record_command(
@@ -87,6 +91,7 @@ class Listener:
             preroll_ms=self.cfg.preroll_ms,
             start_rms=self.cfg.vad_start_rms,
             keep_rms=self.cfg.vad_keep_rms,
+            min_speech_ms=self.cfg.min_command_ms,
         )
         if audio is None:
             self._say("  … no command heard.")
@@ -146,6 +151,7 @@ class Listener:
                     preroll_ms=self.cfg.preroll_ms,
                     start_rms=self.cfg.vad_start_rms,
                     keep_rms=self.cfg.vad_keep_rms,
+                    min_speech_ms=self.cfg.min_command_ms,
                     onset_timeout_s=1.0,  # short, so the loop keeps polling
                 )
                 if utt is None:

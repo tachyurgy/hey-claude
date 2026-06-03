@@ -135,24 +135,34 @@ def record_command(
     preroll_ms: int = 300,
     start_rms: float = 0.012,
     keep_rms: float = 0.008,
+    min_speech_ms: int = 350,
     onset_timeout_s: float = 4.0,
 ) -> Optional[np.ndarray]:
     """Capture the spoken command after the wake word.
 
     Returns a float32 array in [-1, 1] at the mic's sample rate, or ``None`` if
-    no speech started within ``onset_timeout_s`` (a bare "hey claude" with no
-    command).
+    nothing worth transcribing was captured. ``None`` happens in two cases:
+
+    * **no onset** — no frame crossed ``start_rms`` within ``onset_timeout_s``
+      (a bare "hey claude" with no command), or
+    * **failed the energy gate** — speech started but fewer than
+      ``min_speech_ms`` of audio actually stayed above ``keep_rms``. This is the
+      decibel "first line of defense": it drops captures that are really just
+      the wake-word tail, a cough, or room noise, so Whisper is never handed
+      near-silence to hallucinate words from.
     """
     frame_ms = FRAME_SAMPLES / mic.samplerate * 1000.0
     silence_frames = max(1, int(silence_ms / frame_ms))
     preroll_frames = max(0, int(preroll_ms / frame_ms))
     onset_frames = max(1, int(onset_timeout_s * 1000 / frame_ms))
     max_frames = max(1, int(max_seconds * 1000 / frame_ms))
+    min_voiced_frames = max(1, int(min_speech_ms / frame_ms))
 
     preroll: deque[np.ndarray] = deque(maxlen=preroll_frames)
     captured: list[np.ndarray] = []
     started = False
     silent_run = 0
+    voiced_frames = 0  # frames above keep_rms — the real "how much did they say"
     waited = 0
 
     while len(captured) < max_frames:
@@ -172,12 +182,14 @@ def record_command(
                 started = True
                 captured.extend(preroll)
                 captured.append(frame)
+                voiced_frames = 1
                 silent_run = 0
             elif waited >= onset_frames:
                 return None  # they said the wake word but never spoke a command
         else:
             captured.append(frame)
             if level >= keep_rms:
+                voiced_frames += 1
                 silent_run = 0
             else:
                 silent_run += 1
@@ -185,6 +197,11 @@ def record_command(
                     break
 
     if not captured:
+        return None
+    # Energy gate: require a real minimum of voiced audio. Without this, a single
+    # loud onset frame (the wake-word tail) followed by a pause sails through and
+    # Whisper invents text from the silence.
+    if voiced_frames < min_voiced_frames:
         return None
     audio = np.concatenate(captured).astype(np.float32) / 32768.0
     return audio
