@@ -111,6 +111,78 @@ def uninstall() -> int:
     return 0
 
 
+def _remove_path(path: Path) -> None:
+    """Delete a file, symlink, or directory tree at ``path`` (no-op if absent)."""
+    if path.is_symlink() or path.is_file():
+        path.unlink()
+    elif path.is_dir():
+        shutil.rmtree(path)
+
+
+def _residuals_note() -> None:
+    print("\nTwo things this can't do for you:")
+    print("  • Revoke microphone access — System Settings → Privacy & Security →")
+    print('    Microphone, and remove "Hey Claude" (or your terminal). macOS owns that grant.')
+    print("  • Remove the package itself — run whichever you installed with:")
+    print("      brew uninstall hey-claude   ·   pipx uninstall hey-claude   ·   pip uninstall hey-claude")
+
+
+def purge(*, assume_yes: bool = False) -> int:
+    """Full teardown: launchd agent + config/models + the bundled ``.app``.
+
+    Deliberately does NOT uninstall the package (that's brew/pipx/pip's job) and
+    cannot clear the macOS microphone grant (TCC is OS-owned). Both are printed
+    as follow-ups. The config dir holds the user's *trained* wake-word models, so
+    we confirm before deleting unless ``assume_yes``.
+    """
+    from . import appbundle
+    from .config import config_home
+
+    targets = [
+        ("launchd agent", plist_path()),
+        ("config + models", config_home()),
+        (".app bundle", appbundle.default_dest()),
+    ]
+    present = [(label, p) for label, p in targets if p.exists()]
+
+    if not present:
+        print("· nothing to remove — no launchd agent, config dir, or .app bundle found.")
+        _residuals_note()
+        return 0
+
+    print("This will permanently delete:")
+    for label, p in present:
+        print(f"  • {label:<17} {p}")
+    if any(label == "config + models" for label, _ in present):
+        print("\n  Your trained wake-word models live in the config dir — they will be lost.")
+
+    if not assume_yes:
+        try:
+            reply = input("\nProceed? [y/N] ").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            reply = ""
+        if reply not in ("y", "yes"):
+            print("· aborted; nothing removed.")
+            return 1
+
+    # Unload the agent before deleting its plist so launchd doesn't keep a stale
+    # job pointing at a path we're about to remove.
+    if plist_path().exists():
+        _launchctl("unload", "-w", str(plist_path()))
+
+    failures = 0
+    for label, p in present:
+        try:
+            _remove_path(p)
+            print(f"✓ removed {label}: {p}")
+        except OSError as exc:
+            failures += 1
+            print(f"✗ could not remove {p}: {exc}", file=sys.stderr)
+
+    _residuals_note()
+    return 1 if failures else 0
+
+
 def start() -> int:
     uid = os.getuid()
     proc = _launchctl("kickstart", "-k", f"gui/{uid}/{LABEL}")

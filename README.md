@@ -259,6 +259,27 @@ hey-claude stop / start / uninstall
 
 Grant mic permission first (see above) or the service will receive silent audio.
 
+## Uninstalling
+
+`hey-claude` keeps state in three places a package manager won't clean up: the
+launchd agent (`~/Library/LaunchAgents`), your config and trained wake-word
+models (`~/.config/hey-claude`), and the `.app` bundle (`~/Applications`). The
+teardown command removes all three:
+
+```bash
+hey-claude uninstall          # just the launchd agent
+hey-claude uninstall --all    # + config, trained models, and the .app (asks first)
+```
+
+Run `--all` **before** removing the package, since `brew`/`pipx`/`pip` can't
+reach those paths. Two things it can't do for you: clear the macOS microphone
+grant (revoke it in **System Settings → Privacy & Security → Microphone**), and
+remove the package itself:
+
+```bash
+brew uninstall hey-claude   #  or:  pipx uninstall hey-claude  /  pip uninstall hey-claude
+```
+
 ## Safety
 
 A voice trigger carries false-positive risk, so the defaults are conservative:

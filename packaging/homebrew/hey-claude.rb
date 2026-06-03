@@ -50,6 +50,11 @@ class HeyClaude < Formula
       Microphone permission: grant it to your terminal on first run, or build a
       permission-stable app:
         hey-claude app
+
+      Uninstalling? Run the teardown BEFORE `brew uninstall` — Homebrew can't
+      reach the config dir, your trained models, or ~/Applications:
+        hey-claude uninstall --all
+      (then revoke mic access in System Settings -> Privacy -> Microphone).
     EOS
   end
 

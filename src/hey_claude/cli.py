@@ -113,10 +113,17 @@ def cmd_app(args: argparse.Namespace) -> int:
 
 
 def cmd_install(args): return service.install()
-def cmd_uninstall(args): return service.uninstall()
 def cmd_start(args): return service.start()
 def cmd_stop(args): return service.stop()
 def cmd_status(args): return service.status()
+
+
+def cmd_uninstall(args: argparse.Namespace) -> int:
+    if getattr(args, "all", False):
+        return service.purge(assume_yes=getattr(args, "yes", False))
+    rc = service.uninstall()
+    print("  tip: full teardown (config, trained models, .app) →  hey-claude uninstall --all")
+    return rc
 
 
 _SOUND_EVENTS = {
@@ -298,7 +305,12 @@ def build_parser() -> argparse.ArgumentParser:
     app_p.set_defaults(func=cmd_app)
 
     sub.add_parser("install", help="install the launchd agent (listen at login)").set_defaults(func=cmd_install)
-    sub.add_parser("uninstall", help="remove the launchd agent").set_defaults(func=cmd_uninstall)
+    un_p = sub.add_parser("uninstall", help="remove the launchd agent (use --all for full teardown)")
+    un_p.add_argument("--all", action="store_true",
+                      help="also remove config, trained models, and the .app bundle")
+    un_p.add_argument("-y", "--yes", action="store_true",
+                      help="skip the confirmation prompt (with --all)")
+    un_p.set_defaults(func=cmd_uninstall)
     sub.add_parser("start", help="start the launchd agent").set_defaults(func=cmd_start)
     sub.add_parser("stop", help="stop the launchd agent").set_defaults(func=cmd_stop)
     sub.add_parser("status", help="launchd agent status").set_defaults(func=cmd_status)

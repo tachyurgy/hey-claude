@@ -16,6 +16,12 @@ to [Semantic Versioning](https://semver.org/).
   (`claude-bg`/`claude-terminal`/`claude-print`, plus `codex`/`aider`/`opencode`/
   `gemini` starting points). A wake can drive any agent CLI; the `claude` binary
   is only required when the active template references it.
+- **Full teardown** — `uninstall --all` removes everything a package manager
+  can't reach: the launchd agent, the config dir + trained wake-word models, and
+  the `~/Applications` `.app` bundle. It confirms before deleting (skip with
+  `-y`/`--yes`) and prints the two follow-ups it can't do for you — revoking the
+  macOS mic grant and removing the package itself. Bare `uninstall` still removes
+  only the launchd agent and now hints at `--all`.
 
 ### Changed
 - `config.resolve_wakeword()` resolves an explicit path, a bundled name, or an
