@@ -63,6 +63,50 @@ def cmd_models(args: argparse.Namespace) -> int:
     return train.list_models()
 
 
+def cmd_agent(args: argparse.Namespace) -> int:
+    from . import agents
+
+    action = getattr(args, "agent_action", None) or "list"
+    cfg = Config.load()
+
+    if action == "show":
+        print(agents.describe_active(cfg.launch_template, cfg.launch_mode))
+        return 0
+
+    if action == "use":
+        preset = agents.get(args.name)
+        if preset is None:
+            print(f"✗ unknown agent preset: {args.name!r}", file=sys.stderr)
+            print(f"  choices: {', '.join(agents.PRESETS)}  (or edit launch_template directly)",
+                  file=sys.stderr)
+            return 1
+        cfg.launch_template = preset.template
+        cfg.launch_mode = preset.launch_mode
+        cfg.save()
+        print(f"✓ agent = {preset.key}  —  {preset.summary}")
+        if preset.template:
+            print(f"  launch_template = {preset.template!r}")
+            print("  Tune it any time:  hey-claude config set launch_template '<your command>'")
+        else:
+            print(f"  launch_mode = {preset.launch_mode!r}  (native Claude Code launch)")
+        return 0
+
+    # list (default)
+    active = agents.describe_active(cfg.launch_template, cfg.launch_mode)
+    print("Agent presets — what a heard command launches:\n")
+    for p in agents.PRESETS.values():
+        marker = "  ← active" if p.key == active else ""
+        print(f"  • {p.key:<16}{marker}")
+        print(f"    {p.summary}")
+        if p.template:
+            print(f"    launch_template: {p.template}")
+    print(f"\nActive: {active}")
+    print("Switch:            hey-claude agent use <preset>")
+    print("Full control:      hey-claude config set launch_template '<command with {command}>'")
+    print("Placeholders:      {command} {name} {permission_mode} {model} {claude_bin}")
+    return 0
+
+
 def cmd_app(args: argparse.Namespace) -> int:
     dest = Path(args.dest).expanduser() if args.dest else None
     return appbundle.build_and_report(dest)
@@ -230,6 +274,14 @@ def build_parser() -> argparse.ArgumentParser:
     use_p = models_sub.add_parser("use", help="activate an installed model by name")
     use_p.add_argument("name")
     models_p.set_defaults(func=cmd_models)
+
+    agent_p = sub.add_parser("agent", help="choose which agent a heard command launches")
+    agent_sub = agent_p.add_subparsers(dest="agent_action")
+    agent_sub.add_parser("list", help="list agent presets and the active one")
+    agent_sub.add_parser("show", help="print the active agent")
+    au = agent_sub.add_parser("use", help="switch to an agent preset (claude-bg, codex, aider, …)")
+    au.add_argument("name")
+    agent_p.set_defaults(func=cmd_agent)
 
     snd_p = sub.add_parser("sounds", help="browse / preview / assign earcons")
     snd_sub = snd_p.add_subparsers(dest="sounds_action")

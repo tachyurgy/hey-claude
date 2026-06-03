@@ -69,7 +69,14 @@ def import_model(src: str, name: str = "", activate: bool = True) -> int:
 
 
 def use_model(name: str) -> int:
-    """Make an installed model the active wake word and set the matching phrase."""
+    """Make a model the active wake word and set the matching phrase.
+
+    Resolves ``name`` against installed models first, then the wake words bundled
+    with hey-claude (``hey_claude``, ``okay_claude``, ``hey_computer`` …). For a
+    bundled model we store the bare name so it keeps resolving across upgrades.
+    """
+    from .models import bundled_path  # local import keeps train light
+
     md = models_dir()
     cand = md / name
     if not cand.exists():
@@ -77,23 +84,47 @@ def use_model(name: str) -> int:
             if (md / f"{name}{ext}").exists():
                 cand = md / f"{name}{ext}"
                 break
-    if not cand.exists():
-        print(f"✗ no installed model named {name!r}. See: hey-claude models")
+
+    bundled = None if cand.exists() else bundled_path(name)
+    if bundled is None and not cand.exists():
+        print(f"✗ no model named {name!r}. See: hey-claude models")
         return 1
+
     cfg = Config.load()
-    cfg.wakeword_model = str(cand)
-    cfg.wake_phrase = _phrase_from_name(cand.stem)
+    if bundled is not None:
+        cfg.wakeword_model = name        # bare bundled name; resolver finds it
+        stem = name
+        source = f"bundled · {bundled.name}"
+    else:
+        cfg.wakeword_model = str(cand)
+        stem = cand.stem
+        source = cand.name
+    cfg.wake_phrase = _phrase_from_name(stem)
     cfg.engine = "openwakeword"
     cfg.save()
-    print(f'✓ active wake word: "{cfg.wake_phrase}"  ({cand.name})')
+    print(f'✓ active wake word: "{cfg.wake_phrase}"  ({source})')
     print("  start listening with:  hey-claude")
     return 0
 
 
 def list_models() -> int:
+    from .models import CATALOG, available  # local import keeps train light
+
     md = models_dir()
     active = str(Config.load().resolved_model_path())
-    print(f"models directory: {md}")
+
+    print("Bundled wake words (ship with hey-claude — no training needed):")
+    print("  Mileage may vary: tune `threshold`, or train your own with `hey-claude train`.\n")
+    for name in available():
+        from .models import bundled_path
+        bp = bundled_path(name)
+        marker = "  ← active" if bp is not None and str(bp) == active else ""
+        phrase, note = CATALOG.get(name, (_phrase_from_name(name), ""))
+        print(f'  • {name:<16} "{phrase}"{marker}')
+        if note:
+            print(f'    {note}')
+
+    print(f"\nInstalled models directory: {md}")
     if md.exists():
         found = sorted(p for p in md.glob("*") if p.suffix.lower() in (".onnx", ".tflite"))
         if found:
@@ -101,10 +132,11 @@ def list_models() -> int:
                 marker = "  ← active" if str(p) == active else ""
                 print(f'  • {p.stem:<16} "{_phrase_from_name(p.stem)}"{marker}')
         else:
-            print("  (no wake-word models installed)")
+            print("  (none installed yet — the bundled ones above work already)")
     else:
-        print("  (directory does not exist yet)")
+        print("  (none installed yet — the bundled ones above work already)")
+
     print(f"\nActivate one:        hey-claude models use <name>")
-    print(f"Train one:           hey-claude train")
+    print(f"Train your own:      hey-claude train")
     print(f"Community models:    {COMMUNITY_MODELS}")
     return 0

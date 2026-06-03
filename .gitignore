@@ -17,6 +17,10 @@ env/
 *.tflite
 models/
 
+# ...EXCEPT the wake-word models we ship as package data (bundled into the wheel).
+!src/hey_claude/models/
+!src/hey_claude/models/*.onnx
+
 # macOS
 .DS_Store
 *.app/

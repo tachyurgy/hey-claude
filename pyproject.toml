@@ -52,6 +52,11 @@ Issues = "https://github.com/tachyurgy/hey-claude/issues"
 hey-claude = "hey_claude.cli:main"
 heyclaude = "hey_claude.cli:main"
 
+# The bundled wake-word models are git-ignored as a class (*.onnx), so list them
+# as build artifacts to force them into the wheel + sdist as package data.
+[tool.hatch.build]
+artifacts = ["src/hey_claude/models/*.onnx"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/hey_claude"]
 

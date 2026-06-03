@@ -78,8 +78,16 @@ def launch(cfg: Config, command: str) -> LaunchResult:
     command = command.strip()
     if not command:
         raise LaunchError("Empty command — nothing to dispatch.")
-    claude_bin = resolve_claude_bin(cfg)
 
+    # A custom launch_template can target ANY agent CLI, so only require the
+    # `claude` binary when the template actually references it (or for the
+    # built-in claude launch modes below).
+    if cfg.launch_template.strip():
+        needs_claude = "{claude_bin}" in cfg.launch_template
+        claude_bin = resolve_claude_bin(cfg) if needs_claude else (cfg.claude_bin or "claude")
+        return _launch_template(cfg, claude_bin, command)
+
+    claude_bin = resolve_claude_bin(cfg)
     if cfg.max_concurrent and cfg.launch_mode == "bg":
         live = count_bg_sessions(claude_bin)
         if live >= cfg.max_concurrent:
@@ -88,8 +96,6 @@ def launch(cfg: Config, command: str) -> LaunchResult:
                 f"(max_concurrent={cfg.max_concurrent}). Skipping dispatch."
             )
 
-    if cfg.launch_template.strip():
-        return _launch_template(cfg, claude_bin, command)
     if cfg.launch_mode == "bg":
         return _launch_bg(cfg, claude_bin, command)
     if cfg.launch_mode == "terminal":

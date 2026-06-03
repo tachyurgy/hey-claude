@@ -96,8 +96,9 @@ class OpenWakeWordEngine:
         if not self.model_path.exists():
             raise WakeError(
                 f"Wake-word model not found: {self.model_path}\n"
-                "Train one (no mic, ~10 min, free) with:  hey-claude train\n"
-                "or switch to the no-model engine:        hey-claude config set engine whisper"
+                "Pick a bundled wake word:                 hey-claude models use hey_claude\n"
+                "or train your own (no mic, ~10 min, free): hey-claude train\n"
+                "or switch to the no-model engine:          hey-claude config set engine whisper"
             )
 
     def load(self) -> None:

@@ -43,8 +43,40 @@ def log_path() -> Path:
     return config_home() / "hey-claude.log"
 
 
+def resolve_wakeword(value: str) -> Path:
+    """Resolve a ``wakeword_model`` config value to a concrete model file.
+
+    Accepts, in order: an explicit filesystem path; a *bundled* model name like
+    ``hey_claude`` (or ``okay_claude``, ``hey_computer`` …, shipped in the wheel);
+    a model installed under ``models_dir()``. Falls back to the bundled default so
+    a fresh install works with no training step.
+    """
+    from .models import bundled_path  # local import: keeps config import-light
+
+    if value:
+        p = Path(value).expanduser()
+        if p.suffix and (p.exists() or p.is_absolute() or "/" in value):
+            return p
+        # A bare name: try a bundled model, then an installed one.
+        bp = bundled_path(value)
+        if bp is not None:
+            return bp
+        for ext in (".onnx", ".tflite"):
+            cand = models_dir() / f"{value}{ext}"
+            if cand.exists():
+                return cand
+        return p  # let the engine raise a clear "not found" with the literal value
+
+    # No model configured: prefer a user-installed default, else the bundled one.
+    installed = models_dir() / "hey_claude.onnx"
+    if installed.exists():
+        return installed
+    bp = bundled_path("hey_claude")
+    return bp if bp is not None else installed
+
+
 def default_model_path() -> Path:
-    return models_dir() / "hey_claude.onnx"
+    return resolve_wakeword("")
 
 
 @dataclass
@@ -100,7 +132,7 @@ class Config:
 
     # ---------------------------------------------------------------------
     def resolved_model_path(self) -> Path:
-        return Path(self.wakeword_model).expanduser() if self.wakeword_model else default_model_path()
+        return resolve_wakeword(self.wakeword_model)
 
     def to_toml(self) -> str:
         lines = [
