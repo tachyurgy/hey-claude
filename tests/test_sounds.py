@@ -49,10 +49,10 @@ def test_event_map_matches_config_fields_and_defaults():
 
 # --- soundpacks ------------------------------------------------------------
 
-def test_default_pack_is_warm_and_every_builtin_resolves():
-    # "warm" is the default; every builtin pack covers all five events.
-    assert Config().soundpack == "warm"
-    assert "warm" in sounds.BUILTIN_PACKS
+def test_default_pack_is_boone_and_every_builtin_resolves():
+    # "boone" is the default; every builtin pack covers all five events.
+    assert Config().soundpack == "boone"
+    assert "boone" in sounds.BUILTIN_PACKS
     for pack in sounds.BUILTIN_PACKS:
         assert sounds.pack_dir(pack) is not None, f"{pack} folder missing"
         for ev in EVENTS:
@@ -60,11 +60,20 @@ def test_default_pack_is_warm_and_every_builtin_resolves():
             assert snd is not None and snd.exists(), f"{pack}/{ev} did not resolve"
 
 
+def test_five_character_voices_ship_with_rotation():
+    # The five named character voices each ship and rotate every cue.
+    for pack in ("boone", "alastair", "mara", "cass", "sol"):
+        assert pack in sounds.BUILTIN_PACKS, f"{pack} missing from catalog"
+        for ev in EVENTS:
+            assert len(sounds.pack_event_files(pack, ev)) >= 2, \
+                f"{pack}/{ev} should ship rotation variants"
+
+
 def test_soundpack_is_a_config_field_that_roundtrips(home):
     cfg = Config()
-    cfg.soundpack = "butler"
+    cfg.soundpack = "alastair"
     cfg.save()
-    assert Config.load().soundpack == "butler"
+    assert Config.load().soundpack == "alastair"
 
 
 def test_event_override_beats_pack(home):
@@ -77,10 +86,14 @@ def test_pack_wake_rotates_through_variants(home):
     files = sounds.pack_event_files("clicks", "wake")
     assert len(files) >= 2, "clicks wake should have rotation variants"
     assert files[0].stem == "wake"  # bare cue leads
-    seq = [sounds.event_sound("wake", "", "clicks").name for _ in range(len(files) * 2)]
-    # Round-robin: one full cycle then it repeats in the same order.
-    assert seq[: len(files)] == [f.name for f in files]
-    assert seq[len(files):] == seq[: len(files)]
+    n = len(files)
+    names = {f.name for f in files}
+    seq = [sounds.event_sound("wake", "", "clicks").name for _ in range(n * 4)]
+    # Shuffle-bag: each pass of n draws plays every variant exactly once.
+    for start in range(0, n * 4, n):
+        assert set(seq[start:start + n]) == names, "a pass should cover every variant once"
+    # And never the same line twice in a row (anti-repeat across pass boundaries).
+    assert all(a != b for a, b in zip(seq, seq[1:])), "no back-to-back repeats"
 
 
 def test_partial_pack_falls_back_to_studio_default(home, tmp_path):

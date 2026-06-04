@@ -1,35 +1,46 @@
 # Soundpack sources & licenses
 
-All bundled audio is free to use and redistribute. Two origins:
+Two origins: CC0 sound-effects, and the five spoken character voices.
 
 ## SFX packs — Kenney (CC0 1.0, public domain)
 
 `clicks`, `metal`, `thud` are built from **Kenney** audio packs, released under
 **Creative Commons CC0 1.0** (https://creativecommons.org/publicdomain/zero/1.0/) —
-public domain, no attribution required. `announcer` / `narrator` are Kenney's
-spoken "Voiceover Pack" (male / female, also CC0).
+public domain, no attribution required.
 
 - Source: https://kenney.nl/assets/category:Audio
 - Built by `scripts/build_sfx_packs.py`
 
-## Voice packs — Coqui VCTK-VITS (CC BY 4.0)
+## Character voices — Hume Octave
 
-The neural voice packs — `sleepy`, `butler`, `buddy`, `captain`, `nadia`,
-`cheery`, `chill`, `pro`, `soft`, `hype`, `crisp`, `scientist`, `coach`, `warm`,
-`terse` — are generated **on-device** with Coqui TTS (`tts_models/en/vctk/vits`).
-No TTS web demos were scraped; nothing proprietary is redistributed.
+The five character voices — `boone` (warm Southern campfire narrator, *default*),
+`alastair` (precise British robo-butler), `mara` (mysterious wayfarer), `cass`
+(brisk field scout), `sol` (dry deadpan night-desk) — are speech generated with
+**Hume Octave** TTS. Each cue ships several distinct lines that shuffle on
+playback, so a character speaks its whole range rather than one stock phrase.
 
-The voices come from the **VCTK corpus**, licensed **CC BY 4.0**
-(https://creativecommons.org/licenses/by/4.0/) — © University of Edinburgh, CSTR.
-Attribution: *CSTR VCTK Corpus, The Centre for Speech Technology Research,
-University of Edinburgh.*
+| pack       | Hume voice                          |
+|------------|-------------------------------------|
+| `boone`    | Campfire Narrator                   |
+| `alastair` | Fastidious Robo-Butler              |
+| `mara`     | Mysterious Woman                    |
+| `cass`     | Sitcom Girl                         |
+| `sol`      | Unserious Movie Trailer Narrator    |
 
-- Built by `scripts/gen_tts_packs.py`
+> **Redistribution note:** these clips are Hume Octave generations. Use/redistribution
+> of the generated audio is governed by Hume's terms for the account that produced
+> them (https://www.hume.ai/terms-of-use). Confirm those terms cover bundling the
+> audio in this package before publishing a release. Anyone who prefers not to rely
+> on them can switch to the CC0 SFX packs (`clicks`/`metal`/`thud`) or drop in their
+> own voice with `hey-claude sounds new <name>`.
+
+The full line matrix and the regenerator live alongside the project assets
+(`phrases.json` / `gen_hume.py`).
 
 ## Normalization
 
-Every cue is normalized to a common loudness (RMS target with a true-peak
-ceiling) by `scripts/_audio_norm.py`, so no pack is louder than another.
+Cues are leveled to a common loudness (RMS target with a true-peak ceiling) by
+`scripts/_audio_norm.py`, so no pack is louder than another.
 
 ## The studio fallback
 

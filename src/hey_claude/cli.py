@@ -196,6 +196,9 @@ def cmd_sounds(args: argparse.Namespace) -> int:
     if action == "pack":
         return _sounds_pack_set(cfg, sounds, args.name, _time)
 
+    if action == "new":
+        return _sounds_new(cfg, sounds, args.name)
+
     if action in (None, "list"):
         active = cfg.soundpack or sounds.STUDIO
         print(f"Active soundpack: {active}   (switch: hey-claude sounds pack <name> · browse: hey-claude sounds packs)\n")
@@ -213,7 +216,7 @@ def cmd_sounds(args: argparse.Namespace) -> int:
             resolved = sounds.event_sound(ev, override, cfg.soundpack)
             src = override if override else f"{active}:{resolved.stem if resolved else '—'}"
             print(f"  {ev:<9} {src:<24} {desc}")
-        print("\nWhole new voice:  hey-claude sounds pack butler   (browse all: hey-claude sounds packs)")
+        print("\nWhole new voice:  hey-claude sounds pack alastair   (browse all: hey-claude sounds packs)")
         print("Preview one:      hey-claude sounds play Glass")
         print("Override one:     hey-claude sounds set dispatch /path/to/sound.wav")
         print("Silence one:      hey-claude sounds set cancel none")
@@ -265,14 +268,49 @@ def _sounds_packs(cfg: Config, sounds) -> int:
         tag = "" if src == "built-in" else f"  [{src}]"
         print(f"  • {name:<9}{tag}{marker}")
         print(f"      {desc}")
-    print(f"\nSwitch:   hey-claude sounds pack <name>      (e.g. hey-claude sounds pack arcade)")
+    print(f"\nSwitch:   hey-claude sounds pack <name>      (e.g. hey-claude sounds pack alastair)")
     print(f"Active:   {active}")
     print("\nRoll your own — no code, just audio files:")
-    print(f"  1. mkdir -p {sounds.user_packs_dir()}/<name>")
-    print("  2. drop in wake / endpoint / dispatch / cancel / error  (.wav/.aiff/.mp3 …);")
-    print("     add wake-2.wav, wake-3.wav … and that cue rotates between them.")
+    print("  1. hey-claude sounds new <name>     (makes the folder + a README for you)")
+    print("  2. drop in wake / endpoint / dispatch / cancel / error  (.wav/.aiff/.mp3/.m4a …);")
+    print("     add wake-2.mp3, wake-3.mp3 … and that cue shuffles between them every time.")
     print("  3. hey-claude sounds pack <name>")
-    print("  (Any cue you omit falls back to the studio default — partial packs are fine.)")
+    print("  (Any cue you omit falls back to the default — partial packs are fine.)")
+    return 0
+
+
+def _sounds_new(cfg: Config, sounds, name: str) -> int:
+    """Scaffold an empty custom soundpack folder with a drop-in README."""
+    name = (name or "").strip()
+    if not name or "/" in name or name in (".", ".."):
+        print("✗ give a simple pack name, e.g. hey-claude sounds new myvoice", file=sys.stderr)
+        return 1
+    dest = sounds.user_packs_dir() / name
+    if dest.exists():
+        print(f"✓ pack folder already exists: {dest}")
+    else:
+        dest.mkdir(parents=True, exist_ok=True)
+        print(f"✓ created {dest}")
+    readme = dest / "README.txt"
+    if not readme.exists():
+        readme.write_text(
+            f"Custom soundpack: {name}\n\n"
+            "Drop audio files in here, named for the five cues:\n"
+            "  wake       — the wake word fired; your turn to speak\n"
+            "  endpoint   — you stopped talking; capture ended\n"
+            "  dispatch   — the agent was sent\n"
+            "  cancel     — a wake fired but no command followed\n"
+            "  error      — dispatch failed\n\n"
+            "Formats: .wav .aiff .caf .mp3 .m4a .aac .flac (anything afplay can play).\n"
+            "Variants rotate: add wake.mp3, wake-2.mp3, wake-3.mp3 … and hey-claude\n"
+            "shuffles through them so a cue never feels robotic. Omit any cue and it\n"
+            "falls back to the built-in default — partial packs are fine.\n\n"
+            f"Then turn it on:  hey-claude sounds pack {name}\n"
+        )
+    print("Next:")
+    print(f"  1. add wake / endpoint / dispatch / cancel / error audio in {dest}")
+    print(f"  2. hey-claude sounds pack {name}")
+    print(f"  (full instructions in {readme})")
     return 0
 
 
@@ -402,8 +440,10 @@ def build_parser() -> argparse.ArgumentParser:
     snd_sub = snd_p.add_subparsers(dest="sounds_action")
     snd_sub.add_parser("list", help="show the active pack, catalog, and current cues")
     snd_sub.add_parser("packs", help="list soundpacks and how to add your own")
-    spk = snd_sub.add_parser("pack", help="switch the active soundpack (studio·arcade·zen·starship·pulse)")
+    spk = snd_sub.add_parser("pack", help="switch the active soundpack (boone·alastair·mara·cass·sol·clicks·metal·thud)")
     spk.add_argument("name", help="pack name (built-in or a custom folder you added)")
+    snw = snd_sub.add_parser("new", help="scaffold an empty custom soundpack folder you can drop audio into")
+    snw.add_argument("name", help="name for your pack (a folder under your config dir)")
     sp = snd_sub.add_parser("play", help="preview a sound by catalog name or file path"); sp.add_argument("name")
     ss = snd_sub.add_parser("set", help="override one event's sound (path, name, or 'none')")
     ss.add_argument("event", help="wake | endpoint | dispatch | cancel | error")

@@ -60,6 +60,7 @@ artifacts = [
     "src/hey_claude/models/*.onnx",
     "src/hey_claude/earcons/*.wav",
     "src/hey_claude/soundpacks/**/*.wav",
+    "src/hey_claude/soundpacks/**/*.mp3",
 ]
 
 [tool.hatch.build.targets.wheel]

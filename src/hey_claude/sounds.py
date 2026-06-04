@@ -7,6 +7,7 @@ All playback is fire-and-forget so it never stalls the listen loop.
 
 from __future__ import annotations
 
+import random
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -101,36 +102,41 @@ EVENTS = ("wake", "endpoint", "dispatch", "cancel", "error")
 # user-facing pack in the catalog below.
 _PACKS_DIR = Path(__file__).resolve().parent / "soundpacks"
 STUDIO = "studio"
-# Catalog order = display order. clicks (default) first, then SFX, then the
-# spoken/neural-voice packs. SFX are CC0 (Kenney); the voice packs are local
-# neural TTS (Coqui VCTK, CC BY) — see soundpacks/SOURCES.md.
+# Catalog order = display order. The five character voices first (boone is the
+# default), then the abstract SFX packs. The voices are five distinct characters
+# — each speaks a different line every time (a shuffle-bag rotation, see
+# pack_event_sound), so you hear the whole personality, not one stock phrase. The
+# SFX packs are CC0 (Kenney); the voices are neural-TTS (Hume Octave) — see
+# soundpacks/SOURCES.md.
 BUILTIN_PACKS: dict[str, str] = {
-    "clicks":    "Clean UI clicks — crisp, minimal.",
-    "metal":     "Metal & bells — clanks, plates, struck tin.",
-    "thud":      "Soft thuds — muted, low, physical.",
-    "announcer": "Game announcer (male) — \"ready\", \"go\", \"mission completed\".",
-    "narrator":  "Game narrator (female) — \"ready\", \"go\", \"mission completed\".",
-    "sleepy":    "Voice — sleepy / drowsy (\"Yes?\" · \"On it!\").",
-    "butler":    "Voice — formal butler (\"You rang?\" · \"Right away.\").",
-    "buddy":     "Voice — casual buddy (\"What's up?\" · \"On it.\").",
-    "captain":   "Voice — ship captain (\"Report.\" · \"Engage.\").",
-    "nadia":     "Voice — Nadia (\"Listening.\" · \"Executing.\").",
-    "cheery":    "Voice — upbeat helper (\"Hi there!\" · \"You got it!\").",
-    "chill":     "Voice — laid-back (\"Yeah?\" · \"On it.\").",
-    "pro":       "Voice — professional (\"Ready.\" · \"Dispatching now.\").",
-    "soft":      "Voice — soft-spoken (\"Mm-hmm?\" · \"Done.\").",
-    "hype":      "Voice — hype man (\"Let's go!\" · \"Sending it!\").",
-    "crisp":     "Voice — crisp secretary (\"Yes?\" · \"Right away.\").",
-    "scientist": "Voice — curious scientist (\"Hmm?\" · \"Initiating.\").",
-    "coach":     "Voice — coach (\"Talk to me.\" · \"Let's do it.\").",
-    "warm":      "Voice — warm & kind (\"I'm here.\" · \"On it now.\") — default.",
-    "terse":     "Voice — minimalist (\"Yep.\" · \"Sent.\").",
+    "boone":    "Voice — warm Southern campfire narrator (\"I'm all ears, go ahead.\") — default.",
+    "alastair": "Voice — precise British robo-butler (\"I'm listening. Go ahead.\" · \"Dispatching now.\").",
+    "mara":     "Voice — mysterious, gentle wayfarer (\"Go ahead, I'm with you.\" · \"Off it goes.\").",
+    "cass":     "Voice — brisk field scout (\"Listening. Go.\" · \"Command dispatched.\").",
+    "sol":      "Voice — dry, deadpan night-desk (\"Go ahead, I'm listening.\" · \"Done. It's out.\").",
+    "clicks":   "SFX — clean UI clicks, crisp & minimal.",
+    "metal":    "SFX — metal & bells: clanks, plates, struck tin.",
+    "thud":     "SFX — soft thuds, muted & low.",
 }
 
-# Per-(pack, event) round-robin cursor: maps to [variant_files, next_index] so
-# rotation persists across the long-running listen loop. Re-seeded if the variant
-# set changes (e.g. the user adds a file mid-run).
+# Per-(pack, event) shuffle-bag: maps to [variant_files, queue] so rotation
+# persists across the long-running listen loop. The queue is a shuffled copy of
+# the variants; we pop one per cue and reshuffle a fresh bag when it empties, so
+# you hear *every* line once before any repeats, in a fresh random order each
+# pass (never the same line twice in a row). Re-seeded if the variant set changes
+# (e.g. the user drops a file in mid-run).
 _rotation: dict[tuple[str, str], list] = {}
+
+
+def _shuffled_bag(files: list[Path], avoid: Optional[Path]) -> list[Path]:
+    """A freshly shuffled copy of ``files``; if ``avoid`` would land first (the
+    line we just played), rotate it deeper so we never repeat back-to-back."""
+    bag = list(files)
+    random.shuffle(bag)
+    if avoid is not None and len(bag) > 1 and bag[-1] == avoid:
+        # bag is consumed from the end (pop()), so bag[-1] plays next.
+        bag[-1], bag[0] = bag[0], bag[-1]
+    return bag
 
 
 def user_packs_dir() -> Path:
@@ -192,7 +198,11 @@ def pack_event_files(pack: str, event: str) -> list[Path]:
 
 
 def pack_event_sound(pack: str, event: str) -> Optional[Path]:
-    """Next sound for ``event`` in ``pack``, rotating through its variants.
+    """Next sound for ``event`` in ``pack`` via a shuffle-bag over its variants.
+
+    Each variant plays once per pass in a random order; when the bag empties we
+    reshuffle (never repeating the just-played line first), so a character speaks
+    its whole range of lines, varied, rather than looping one stock phrase.
 
     Returns ``None`` when the pack has nothing for this event (the caller falls
     back to the built-in default), so a partial custom pack never goes silent.
@@ -205,11 +215,19 @@ def pack_event_sound(pack: str, event: str) -> Optional[Path]:
     key = (pack, event)
     state = _rotation.get(key)
     if state is None or state[0] != files:  # first use, or the variant set changed
-        state = [files, 0]
+        state = [files, _shuffled_bag(files, avoid=None)]
         _rotation[key] = state
-    files, idx = state
-    state[1] = (idx + 1) % len(files)
-    return files[idx]
+    bag = state[1]
+    if not bag:  # bag exhausted — reshuffle a fresh pass
+        last = state[2] if len(state) > 2 else None
+        bag = _shuffled_bag(files, avoid=last)
+        state[1] = bag
+    chosen = bag.pop()
+    if len(state) > 2:
+        state[2] = chosen
+    else:
+        state.append(chosen)
+    return chosen
 
 
 def resolve(event: str, override: str = "") -> Optional[Path]:
