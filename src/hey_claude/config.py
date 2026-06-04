@@ -111,6 +111,13 @@ class Config:
     # "terminal" -> open a new Terminal running claude "<command>" (interactive)
     # "print"    -> claude -p "<command>" ...         (headless one-shot, logged)
     launch_mode: str = "bg"
+    # Directory dispatched agents start in (their working dir). Empty => the
+    # directory hey-claude was launched from (its current folder) — which is the
+    # right default for a foreground run. Running as a background/login daemon has
+    # no useful current folder, so set this to the project you want agents to work
+    # in:  hey-claude config set work_dir ~/code/myproject  (or  hey-claude run
+    # --dir <path>). A "~" is expanded; a missing dir is reported, not guessed.
+    work_dir: str = ""
     claude_bin: str = "claude"
     permission_mode: str = ""  # "", "acceptEdits", "plan", "bypassPermissions", ...
     claude_model: str = ""  # override the dispatched session's model; "" => default

@@ -3,7 +3,7 @@
 import pytest
 
 from hey_claude.config import Config
-from hey_claude.launcher import LaunchError, render_template, session_name
+from hey_claude.launcher import LaunchError, render_template, resolve_work_dir, session_name
 
 
 def test_session_name_truncates_and_prefixes():
@@ -37,3 +37,20 @@ def test_template_empty_after_expansion_raises():
     cfg = Config(launch_template="   ")
     with pytest.raises(LaunchError):
         render_template(cfg, "/bin/claude", "x")
+
+
+def test_work_dir_default_is_none_meaning_current_folder():
+    # Empty work_dir -> None so the subprocess inherits hey-claude's own cwd.
+    assert resolve_work_dir(Config()) is None
+
+
+def test_work_dir_resolves_and_expands(tmp_path, monkeypatch):
+    monkeypatch.setenv("HOME", str(tmp_path))
+    (tmp_path / "proj").mkdir()
+    assert resolve_work_dir(Config(work_dir=str(tmp_path / "proj"))) == str(tmp_path / "proj")
+    assert resolve_work_dir(Config(work_dir="~/proj")) == str(tmp_path / "proj")
+
+
+def test_work_dir_missing_dir_raises():
+    with pytest.raises(LaunchError):
+        resolve_work_dir(Config(work_dir="/no/such/dir/xyz123"))

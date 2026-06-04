@@ -23,6 +23,8 @@ def _apply_run_overrides(cfg: Config, args: argparse.Namespace) -> None:
         cfg.whisper_model = args.whisper_model
     if args.device:
         cfg.mic_device = args.device
+    if getattr(args, "work_dir", None):
+        cfg.work_dir = args.work_dir
     if args.permission_mode:
         cfg.permission_mode = args.permission_mode
     if args.claude_model:
@@ -394,6 +396,7 @@ def build_parser() -> argparse.ArgumentParser:
         rp.add_argument("--threshold", type=float, help="openWakeWord detection threshold (0-1)")
         rp.add_argument("--whisper-model", dest="whisper_model", help="MLX Whisper model for command transcription")
         rp.add_argument("--device", help="microphone device (index or name substring)")
+        rp.add_argument("--dir", dest="work_dir", help="directory dispatched agents start in (default: current folder)")
         rp.add_argument("--permission-mode", dest="permission_mode", help="permission mode for dispatched agents")
         rp.add_argument("--model", dest="claude_model", help="model for dispatched agents")
         rp.add_argument("--confirm", action="store_true", help="require Enter before each dispatch")

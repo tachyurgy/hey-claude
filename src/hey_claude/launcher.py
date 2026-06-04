@@ -35,6 +35,26 @@ class LaunchResult:
     detail: str  # session id, log path, or a human-readable note
 
 
+def resolve_work_dir(cfg: Config) -> Optional[str]:
+    """The directory a dispatched agent should run in.
+
+    ``cfg.work_dir`` empty -> ``None``, meaning inherit hey-claude's own current
+    directory (correct for a foreground run). When set, it's expanded and must be
+    an existing directory — we raise rather than silently dispatch somewhere
+    surprising (a daemon has no useful cwd, so a bad value should be loud).
+    """
+    raw = (cfg.work_dir or "").strip()
+    if not raw:
+        return None
+    path = Path(raw).expanduser()
+    if not path.is_dir():
+        raise LaunchError(
+            f"work_dir {raw!r} is not a directory. Fix it with:  "
+            f"hey-claude config set work_dir /full/path/to/project"
+        )
+    return str(path)
+
+
 def resolve_claude_bin(cfg: Config) -> str:
     candidate = cfg.claude_bin or "claude"
     found = shutil.which(candidate)
@@ -138,7 +158,8 @@ def render_template(cfg: Config, claude_bin: str, command: str) -> list[str]:
 def _launch_template(cfg: Config, claude_bin: str, command: str) -> LaunchResult:
     argv = render_template(cfg, claude_bin, command)
     try:
-        proc = subprocess.run(argv, capture_output=True, text=True, timeout=120)
+        proc = subprocess.run(argv, capture_output=True, text=True, timeout=120,
+                              cwd=resolve_work_dir(cfg))
     except (OSError, subprocess.SubprocessError) as exc:
         raise LaunchError(f"Custom launch_template failed: {exc}") from exc
     out = ((proc.stdout or "") + (proc.stderr or "")).strip()
@@ -167,7 +188,8 @@ def _launch_bg(cfg: Config, claude_bin: str, command: str) -> LaunchResult:
     args += _common_session_flags(cfg)
     args.append(command)
     try:
-        proc = subprocess.run(args, capture_output=True, text=True, timeout=60)
+        proc = subprocess.run(args, capture_output=True, text=True, timeout=60,
+                              cwd=resolve_work_dir(cfg))
     except (OSError, subprocess.SubprocessError) as exc:
         raise LaunchError(f"Failed to dispatch background agent: {exc}") from exc
     out = (proc.stdout or "") + (proc.stderr or "")
@@ -183,6 +205,9 @@ def _launch_terminal(cfg: Config, claude_bin: str, command: str) -> LaunchResult
     # Build the shell line that runs inside the new Terminal tab, then embed it
     # in an AppleScript string (escaping backslashes and double quotes once).
     shell_line = f"{_shq(claude_bin)} {_shq(command)}"
+    work_dir = resolve_work_dir(cfg)
+    if work_dir:  # start the interactive session in the configured project dir
+        shell_line = f"cd {_shq(work_dir)} && {shell_line}"
     script = f'tell application "Terminal" to do script "{_osa(shell_line)}"'
     script += '\ntell application "Terminal" to activate'
     try:
@@ -201,7 +226,8 @@ def _launch_print(cfg: Config, claude_bin: str, command: str) -> LaunchResult:
     fh.write(f"\n=== {command!r} ===\n".encode())
     fh.flush()
     try:
-        subprocess.Popen(args, stdout=fh, stderr=fh, start_new_session=True)
+        subprocess.Popen(args, stdout=fh, stderr=fh, start_new_session=True,
+                         cwd=resolve_work_dir(cfg))
     except (OSError, subprocess.SubprocessError) as exc:
         fh.close()
         raise LaunchError(f"Failed to start headless agent: {exc}") from exc

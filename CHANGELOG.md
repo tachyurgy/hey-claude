@@ -19,6 +19,13 @@ to [Semantic Versioning](https://semver.org/).
   `announcer`/`narrator` packs were removed.
 
 ### Added
+- **Configurable agent working directory.** Dispatched agents now start in a
+  directory you choose — `hey-claude config set work_dir ~/code/project` or
+  `hey-claude run --dir <path>`. Empty (the default) means the folder you launched
+  from, so a foreground run "just works"; set it explicitly for a background/login
+  daemon, which has no current folder. The active dir is shown in the run banner
+  and the "Make it yours" cheat-sheet. Applies to every launch mode (bg, terminal,
+  print, and custom templates).
 - **`hey-claude sounds new <name>`** — scaffolds a custom soundpack folder with a
   drop-in README, so adding your own voice is a one-liner.
 

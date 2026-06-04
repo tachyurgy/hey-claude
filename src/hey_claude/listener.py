@@ -7,6 +7,7 @@ transcription cleanup, confirmation, and feedback are defined once.
 
 from __future__ import annotations
 
+import os
 import sys
 
 from . import sounds
@@ -198,9 +199,12 @@ class Listener:
             mode = {"bg": "background agent (claude --bg)",
                     "terminal": "new Terminal session",
                     "print": "headless (claude -p)"}.get(self.cfg.launch_mode, self.cfg.launch_mode)
+        work_dir = (self.cfg.work_dir or "").strip()
+        where = os.path.expanduser(work_dir) if work_dir else f"{os.getcwd()} (current folder)"
         self._say("")
         self._say(f'  hey-claude is listening — say "{self.cfg.wake_phrase}, <your task>"')
         self._say(f"  engine: {self.cfg.engine}   launch: {mode}")
+        self._say(f"  agents work in: {where}")
         self._say("  press Ctrl-C to stop")
         self._say("")
 
