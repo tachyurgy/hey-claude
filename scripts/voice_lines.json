@@ -1,0 +1,47 @@
+{
+  "_comment": "Line matrix for the five character voice packs. Each (pack,event) ships several variants that hey-claude shuffles on playback. Regenerate with scripts/gen_voice_packs.py (Hume Octave). event -> filename: wake.mp3, wake-2.mp3, ... per variant index.",
+  "voices": {
+    "boone":    "Campfire Narrator",
+    "alastair": "Fastidious Robo-Butler",
+    "mara":     "Mysterious Woman",
+    "cass":     "Sitcom Girl",
+    "sol":      "Unserious Movie Trailer Narrator"
+  },
+  "lines": {
+    "alastair": {
+      "wake":     ["I'm listening. Go ahead.", "Channel open. I have you.", "Standing by for your command.", "At your service. Proceed.", "Ready when you are."],
+      "endpoint": ["Acknowledged. Standing by.", "Copy that. Logged and confirmed.", "Noted precisely.", "Understood. Got it.", "Received in full."],
+      "dispatch": ["Dispatching now.", "Command away. Executing.", "Right away — sending it through.", "On it. En route.", "Consider it done."],
+      "cancel":   ["Canceled. Disregarding the last order.", "Stood down. Nothing was sent.", "Very good — we'll let that pass.", "Order rescinded.", "As you were."],
+      "error":    ["We've hit a snag. I couldn't complete that.", "Something went wrong on my end. Holding position.", "I'm afraid that failed.", "A complication — it didn't go through.", "That didn't take, regrettably."]
+    },
+    "boone": {
+      "wake":     ["I'm all ears, go ahead.", "Listening now. What do you need?", "Go on, I'm right here.", "Yeah? Whatcha got for me.", "Fire away, partner."],
+      "endpoint": ["Got it!", "Okay, I'm on it.", "Alright, that's the one.", "Mm-hmm, heard you.", "You got it."],
+      "dispatch": ["Sending that off for you.", "On its way!", "Off it goes.", "Sendin' it on down the line.", "There she goes."],
+      "cancel":   ["No worries, I canceled it.", "Scrapped that. We're good.", "Alright, never mind then.", "We'll let that one be.", "Forget it, all good."],
+      "error":    ["Hmm, that didn't work. Let's try again.", "Something tripped up. I couldn't finish that one.", "Well, that went sideways.", "Shoot, that one didn't take.", "That didn't pan out, sorry."]
+    },
+    "mara": {
+      "wake":     ["I'm listening now, go on.", "Go ahead, I'm with you.", "Speak, I'm here.", "I'm listening. Take your time.", "Go on, then."],
+      "endpoint": ["Acknowledged, so.", "Right you are. I've got it.", "I have it.", "Understood, then.", "Heard, and held."],
+      "dispatch": ["Off it goes.", "Sending that along for you.", "It's on its way now.", "Away it goes, into the dark.", "Sent."],
+      "cancel":   ["Canceled, not to worry.", "Let that go. Nothing was sent.", "Nothing, then.", "We'll leave it be.", "Set it down. It's gone."],
+      "error":    ["Ah, that didn't take. Something went wrong.", "I couldn't manage that one, sorry.", "It slipped away from me.", "That wouldn't hold, I'm afraid.", "No luck — it didn't go."]
+    },
+    "cass": {
+      "wake":     ["Listening. Go.", "Reading you. Proceed.", "Go for it.", "Yep, what's up?", "I'm on. Shoot."],
+      "endpoint": ["Acknowledged.", "Roger that.", "Got it.", "Copy.", "Okay, done."],
+      "dispatch": ["Command dispatched.", "Sent. Moving.", "On its way!", "Sending it.", "Out the door."],
+      "cancel":   ["Canceled.", "Aborted. Nothing went out.", "Scratch that.", "Never mind.", "Stand down."],
+      "error":    ["Error. That didn't land.", "No good. The command failed.", "Oof, that broke.", "Yeah, that didn't work.", "Failed. Try again?"]
+    },
+    "sol": {
+      "wake":     ["Go ahead, I'm listening.", "I'm here. What is it.", "Yeah. I'm up. Talk.", "Night desk. Go.", "Listening. Make it count."],
+      "endpoint": ["Yeah, got it.", "Noted.", "Mm. Got it.", "Sure. Logged.", "Heard."],
+      "dispatch": ["Done. It's out.", "Sending it.", "It's gone. Somewhere out there.", "Dispatched.", "On its way. Allegedly."],
+      "cancel":   ["Canceled it.", "Forget it. Nothing sent.", "Nope. Scrapped.", "Killed it. We're done.", "Nothing happens. Roll credits."],
+      "error":    ["That broke. Couldn't do it.", "Yeah, that one failed.", "Well. That didn't work.", "Error. The plot thickens.", "It failed. Tragically."]
+    }
+  }
+}
