@@ -6,51 +6,62 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-06-03
+
+First public release. Say **"hey claude, &lt;task&gt;"** and an on-device pipeline
+dispatches a Claude Code (or any) agent.
+
 ### Added
+- **On-device wake-word pipeline** — openWakeWord → energy-VAD endpointing →
+  MLX Whisper → `claude --bg "<command>"`. Two wake engines: `openwakeword`
+  (default, low-power, trained model) and `whisper` (no model file, works out of
+  the box). Three launch modes (`bg`, `terminal`, `print`) plus a fully custom
+  `launch_template` with safe per-token placeholder substitution.
 - **Bundled wake words** — five openWakeWord models ship as package data
   (`hey_claude` default, plus `okay_claude`, `hey_computer`, `hey_assistant`,
-  `hey_agent`), so the tool works the moment it's installed with no training
-  step. `models` lists them with a "mileage may vary" note; `models use <name>`
-  activates a bundled model by name.
-- **Agent-agnostic dispatch** — `agent list/use/show` and a preset registry
+  `hey_agent`), so it works the moment it's installed. `models` lists them;
+  `models use <name>` activates one.
+- **Agent-agnostic dispatch** — `agent list/use/show/set` and a preset registry
   (`claude-bg`/`claude-terminal`/`claude-print`, plus `codex`/`aider`/`opencode`/
-  `gemini` starting points). A wake can drive any agent CLI; the `claude` binary
-  is only required when the active template references it.
-- **"Stopped listening" earcon** — a new `endpoint` sound event (default `Pop`)
-  fires the instant command capture ends, before the silent transcription gap —
-  the Siri-style second tone to pair with the `wake` start tone. Configurable
-  like the others (`sounds set endpoint <name>` / `config set sound_endpoint`,
-  `none` to silence) and included in `sounds list`/`sounds test`.
-- **Full teardown** — `uninstall --all` removes everything a package manager
-  can't reach: the launchd agent, the config dir + trained wake-word models, and
-  the `~/Applications` `.app` bundle. It confirms before deleting (skip with
-  `-y`/`--yes`) and prints the two follow-ups it can't do for you — revoking the
-  macOS mic grant and removing the package itself. Bare `uninstall` still removes
-  only the launchd agent and now hints at `--all`.
-
-### Changed
-- `config.resolve_wakeword()` resolves an explicit path, a bundled name, or an
-  installed model, falling back to the bundled `hey_claude` so a fresh install
-  listens immediately.
-
-## [0.1.0] — initial release
-
-### Added
-- On-device wake-word pipeline: openWakeWord → energy-VAD endpointing →
-  MLX Whisper → `claude --bg "<command>"`.
-- Two wake engines: `openwakeword` (default, low-power, needs a trained model)
-  and `whisper` (no model file, works out of the box).
-- Three launch modes (`bg`, `terminal`, `print`) plus a fully custom
-  `launch_template` with safe per-token placeholder substitution.
-- Configurable per-event sounds (`sound_wake`/`dispatch`/`cancel`/`error`),
-  accepting a file path, a macOS system-sound name, or `none`.
-- CLI: `run`, `doctor`, `train`, `import-model`, `models`, `app`, `config`, and
-  launchd service commands (`install`/`uninstall`/`start`/`stop`/`status`).
-- `.app` generator for a microphone-permission-stable identity.
-- launchd user agent for listening at login.
+  `gemini` starting points). A wake can drive any agent CLI; `agent set
+  '<cmd with {command}>'` points it anywhere in one step.
+- **Soundpacks** — swap the entire audible "voice" of the tool with one setting
+  (`sounds pack <name>` / `sounds packs`). 20 bundled packs, each a folder of the
+  five event cues (wake/endpoint/dispatch/cancel/error); multiple files per event
+  **rotate** so a cue never repeats identically. Drop a folder in
+  `~/.config/hey-claude/soundpacks/<name>/` for your own — the how-to prints at
+  install, in `doctor`, and in `sounds packs`.
+- **Neural-TTS voice packs** — 15 spoken-character voices (`warm` [default],
+  `butler`, `captain`, `hype`, `nadia`, `sleepy`, `scientist`, `terse`, …),
+  each a distinct voice saying distinct lines ("Yes?", "On it!", "Engage.",
+  "Executing."), generated on-device with Coqui VCTK-VITS (VCTK corpus, CC BY
+  4.0). Plus CC0 SFX packs (`clicks`/`metal`/`thud`) and spoken `announcer`/
+  `narrator` (Kenney, CC0). Every cue is loudness-normalized to one level.
+- **"Stopped listening" earcon** — an `endpoint` cue fires the instant capture
+  ends, before the silent transcription gap (the Siri-style second tone).
+- **Change the wake phrase in one step** — `hey-claude wake "<phrase>"`, with a
+  clear note when the low-power engine needs a matching model.
+- **Friendly fail-fast** — `run` preflights the platform and exits immediately
+  with a helpful message on an unsupported OS/CPU or missing MLX Whisper, before
+  loading any model. `doctor` does the full environment check + a "make it yours"
+  customization cheat-sheet (also printed after `install`).
+- **Configurable per-event sounds** — `sound_wake`/`endpoint`/`dispatch`/`cancel`/
+  `error` accept a file path, a macOS system-sound name, or `none`.
+- **Full teardown** — `uninstall --all` removes the launchd agent, config +
+  trained models, and the `.app` bundle (confirms first; `-y` to skip).
+- **`.app` generator** for a microphone-permission-stable identity, and a
+  **launchd** user agent for listening at login.
+- **CLI**: `run`, `doctor`, `train`, `import-model`, `models`, `agent`, `sounds`,
+  `wake`, `app`, `config`, and service commands
+  (`install`/`uninstall`/`start`/`stop`/`status`).
 - TOML configuration at `~/.config/hey-claude/config.toml`.
-- Unit tests for wake matching, config persistence/coercion, and the
-  launch-template no-injection guarantee; macOS CI on Python 3.11–3.13.
+- Unit tests (wake matching, config persistence, soundpack rotation/resolution,
+  launch-template no-injection guarantee); macOS CI on Python 3.11–3.13.
+
+### Requirements
+- **macOS on Apple Silicon** only (MLX Whisper runs on the Metal GPU), Python
+  3.10–3.13, and Claude Code `≥ 2.1.139` for `claude --bg` (or point it at
+  another agent).
 
 [Unreleased]: https://github.com/tachyurgy/hey-claude/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/tachyurgy/hey-claude/releases/tag/v0.1.0
