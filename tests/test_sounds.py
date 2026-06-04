@@ -49,10 +49,10 @@ def test_event_map_matches_config_fields_and_defaults():
 
 # --- soundpacks ------------------------------------------------------------
 
-def test_default_pack_is_boone_and_every_builtin_resolves():
-    # "boone" is the default; every builtin pack covers all five events.
-    assert Config().soundpack == "boone"
-    assert "boone" in sounds.BUILTIN_PACKS
+def test_default_pack_is_sawyer_and_every_builtin_resolves():
+    # "sawyer" is the default; every builtin pack covers all five events.
+    assert Config().soundpack == "sawyer"
+    assert "sawyer" in sounds.BUILTIN_PACKS
     for pack in sounds.BUILTIN_PACKS:
         assert sounds.pack_dir(pack) is not None, f"{pack} folder missing"
         for ev in EVENTS:
@@ -62,7 +62,7 @@ def test_default_pack_is_boone_and_every_builtin_resolves():
 
 def test_five_character_voices_ship_with_rotation():
     # The five named character voices each ship and rotate every cue.
-    for pack in ("boone", "alastair", "mara", "cass", "sol"):
+    for pack in ("sawyer", "alastair", "mara", "cass", "sol"):
         assert pack in sounds.BUILTIN_PACKS, f"{pack} missing from catalog"
         for ev in EVENTS:
             assert len(sounds.pack_event_files(pack, ev)) >= 2, \

@@ -11,7 +11,7 @@ Idempotent: existing non-empty files are skipped, so a rerun only fills gaps.
 Usage:
     export HUME_API_KEY=...           # your Hume API key
     python3 scripts/gen_voice_packs.py            # all packs
-    python3 scripts/gen_voice_packs.py boone sol  # only these packs
+    python3 scripts/gen_voice_packs.py sawyer sol  # only these packs
 """
 from __future__ import annotations
 

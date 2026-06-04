@@ -128,12 +128,12 @@ class Config:
     chime: bool = True  # play sounds on wake / dispatch / cancel / error
     verbose: bool = True
     # Active soundpack: reskins all five event cues at once. A character voice —
-    # "boone" (default, warm Southern narrator), "alastair"/"mara"/"cass"/"sol" —
+    # "sawyer" (default, warm Southern narrator), "alastair"/"mara"/"cass"/"sol" —
     # or an abstract SFX pack ("clicks"/"metal"/"thud"), or the name of a custom
     # pack folder you drop in <config>/soundpacks/ (see `hey-claude sounds packs`).
     # Each voice shuffles through several lines per cue. Per-event sound_*
     # overrides below still win.
-    soundpack: str = "boone"
+    soundpack: str = "sawyer"
     # Sound overrides — absolute paths to .aiff/.wav/.mp3 etc. Empty => the
     # active soundpack's cue. Set to "none" to silence just that one event.
     sound_wake: str = ""      # played when the wake word is detected (start of listening)

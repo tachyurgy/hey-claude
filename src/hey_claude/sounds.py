@@ -102,14 +102,14 @@ EVENTS = ("wake", "endpoint", "dispatch", "cancel", "error")
 # user-facing pack in the catalog below.
 _PACKS_DIR = Path(__file__).resolve().parent / "soundpacks"
 STUDIO = "studio"
-# Catalog order = display order. The five character voices first (boone is the
+# Catalog order = display order. The five character voices first (sawyer is the
 # default), then the abstract SFX packs. The voices are five distinct characters
 # — each speaks a different line every time (a shuffle-bag rotation, see
 # pack_event_sound), so you hear the whole personality, not one stock phrase. The
 # SFX packs are CC0 (Kenney); the voices are neural-TTS (Hume Octave) — see
 # soundpacks/SOURCES.md.
 BUILTIN_PACKS: dict[str, str] = {
-    "boone":    "Voice — warm Southern campfire narrator (\"I'm all ears, go ahead.\") — default.",
+    "sawyer":    "Voice — warm Southern campfire narrator (\"I'm all ears, go ahead.\") — default.",
     "alastair": "Voice — precise British robo-butler (\"I'm listening. Go ahead.\" · \"Dispatching now.\").",
     "mara":     "Voice — mysterious, gentle wayfarer (\"Go ahead, I'm with you.\" · \"Off it goes.\").",
     "cass":     "Voice — brisk field scout (\"Listening. Go.\" · \"Command dispatched.\").",

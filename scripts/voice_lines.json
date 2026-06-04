@@ -1,7 +1,7 @@
 {
   "_comment": "Line matrix for the five character voice packs. Each (pack,event) ships several variants that hey-claude shuffles on playback. Regenerate with scripts/gen_voice_packs.py (Hume Octave). event -> filename: wake.mp3, wake-2.mp3, ... per variant index.",
   "voices": {
-    "boone":    "Campfire Narrator",
+    "sawyer":    "Campfire Narrator",
     "alastair": "Fastidious Robo-Butler",
     "mara":     "Mysterious Woman",
     "cass":     "Sitcom Girl",
@@ -15,7 +15,7 @@
       "cancel":   ["Canceled. Disregarding the last order.", "Stood down. Nothing was sent.", "Very good — we'll let that pass.", "Order rescinded.", "As you were."],
       "error":    ["We've hit a snag. I couldn't complete that.", "Something went wrong on my end. Holding position.", "I'm afraid that failed.", "A complication — it didn't go through.", "That didn't take, regrettably."]
     },
-    "boone": {
+    "sawyer": {
       "wake":     ["I'm all ears, go ahead.", "Listening now. What do you need?", "Go on, I'm right here.", "Yeah? Whatcha got for me.", "Fire away, partner."],
       "endpoint": ["Got it!", "Okay, I'm on it.", "Alright, that's the one.", "Mm-hmm, heard you.", "You got it."],
       "dispatch": ["Sending that off for you.", "On its way!", "Off it goes.", "Sendin' it on down the line.", "There she goes."],

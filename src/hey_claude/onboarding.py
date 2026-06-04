@@ -16,7 +16,7 @@ def tips(cfg: Config) -> str:
     """A short, copy-pasteable block showing each knob's current value + how to
     change it, tailored to the live config."""
     phrase = cfg.wake_phrase or "hey claude"
-    pack = cfg.soundpack or "boone"
+    pack = cfg.soundpack or "sawyer"
     agent = agents.describe_active(cfg.launch_template, cfg.launch_mode)
     n_packs = len(sounds.BUILTIN_PACKS)
     packs_dir = sounds.user_packs_dir()
