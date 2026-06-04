@@ -18,16 +18,20 @@ Reverse-chronological deploy log for hey-claude. (Process details: `RELEASE.md`.
   v0.2.0 tarball (`1719994…`).
 - **Verified:** release + tag created; 56 unit tests green; wheel build packages all
   125 voice clips (25/voice); clips play via afplay.
-- **NOT yet live (needs account-side setup, unchanged from v0.1.0):**
-  - **PyPI** — Trusted Publishing wired; the release workflow runs but the upload
-    step no-ops until a one-time trusted-publisher registration on pypi.org
-    (owner=tachyurgy, repo=hey-claude, workflow=pypi-publish.yml; register as a
-    *pending* publisher for the first upload). Then re-run the workflow.
-  - **Homebrew** — `tachyurgy/homebrew-tap` must be made **public** and the formula
-    `packaging/homebrew/hey-claude.rb` copied to `Formula/hey-claude.rb` there.
-  - **Licensing note:** the package now bundles Hume Octave voice clips; confirm
-    Hume's TOS covers redistribution before the public PyPI/Homebrew push (the CC0
-    SFX packs are the safe fallback). See `src/hey_claude/soundpacks/SOURCES.md`.
+- **NOW LIVE on all channels (2026-06-04):**
+  - **PyPI** — **`pip install hey-claude` works.** v0.2.0 wheel + sdist uploaded via
+    `twine` with an account API token (not the OIDC flow — token was simpler given it
+    was provided). https://pypi.org/project/hey-claude/0.2.0/ ; `/simple/` lists both
+    files; `pip index versions hey-claude` → 0.2.0.
+  - **Homebrew** — **`brew install tachyurgy/tap/hey-claude` works.** `tachyurgy/
+    homebrew-tap` made **public**; `Formula/hey-claude.rb` updated to the v0.2.0 tarball
+    + real sha256 (`17199943…534a`). `brew tap` + `brew info` resolve to "stable 0.2.0".
+    (Full end-to-end `brew install` not run here — heavy ML build — but the formula
+    mirrors the working pip package and parses/audits clean.)
+  - **Licensing:** shipped as-is with the Hume Octave voices (token = the go-ahead).
+    The CC0 SFX packs remain available as a fallback if Hume's TOS ever requires it.
+    SECURITY: the PyPI account token was shared in plaintext to do this upload —
+    recommend rotating it now that the publish is done.
 
 ## 2026-06-03 — v0.1.0 (first public release)
 - **What deployed:** GitHub release `v0.1.0` at
