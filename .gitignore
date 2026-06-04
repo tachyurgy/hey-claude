@@ -29,5 +29,8 @@ models/
 *.log
 .hey-claude-local/
 
+# Local-only launch/publish notes (not for the public repo)
+PUBLISH-WALKTHROUGH.md
+
 # Local Colab CDP automation (superseded by training/train_wakewords.py)
 tools/
