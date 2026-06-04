@@ -49,10 +49,10 @@ def test_event_map_matches_config_fields_and_defaults():
 
 # --- soundpacks ------------------------------------------------------------
 
-def test_default_pack_is_clicks_and_every_builtin_resolves():
-    # clicks is the default and leads the catalog; every builtin covers all events.
-    assert next(iter(sounds.BUILTIN_PACKS)) == "clicks"
-    assert Config().soundpack == "clicks"
+def test_default_pack_is_warm_and_every_builtin_resolves():
+    # "warm" is the default; every builtin pack covers all five events.
+    assert Config().soundpack == "warm"
+    assert "warm" in sounds.BUILTIN_PACKS
     for pack in sounds.BUILTIN_PACKS:
         assert sounds.pack_dir(pack) is not None, f"{pack} folder missing"
         for ev in EVENTS:
@@ -62,9 +62,9 @@ def test_default_pack_is_clicks_and_every_builtin_resolves():
 
 def test_soundpack_is_a_config_field_that_roundtrips(home):
     cfg = Config()
-    cfg.soundpack = "assistant"
+    cfg.soundpack = "butler"
     cfg.save()
-    assert Config.load().soundpack == "assistant"
+    assert Config.load().soundpack == "butler"
 
 
 def test_event_override_beats_pack(home):

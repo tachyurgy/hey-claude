@@ -48,9 +48,27 @@ or read [how we work](https://consulting.levelbrook.com).
 
 ---
 
-## Install
+## Requirements
 
-Requires **macOS on Apple Silicon**, **Python 3.10–3.13**, and **[Claude Code](https://code.claude.com)** `≥ 2.1.139` (for `claude --bg`).
+hey-claude is **macOS + Apple-Silicon only**. It transcribes your speech locally
+with [MLX](https://github.com/ml-explore/mlx) Whisper, which runs on the Metal GPU
+of an Apple-Silicon chip — there's no Linux, Windows, or Intel-Mac build.
+
+| Need | Why |
+|---|---|
+| **macOS** | MLX + CoreAudio; no cross-platform build |
+| **Apple Silicon** (M1 or newer) | MLX Whisper runs on the Metal GPU |
+| **Python 3.10–3.13** | ML wheels (MLX, onnxruntime) |
+| **[Claude Code](https://code.claude.com)** `≥ 2.1.139` | the `claude --bg` agent it dispatches to (or [point it at another agent](#launch-any-agent--not-just-claude)) |
+
+You won't waste time finding out the hard way: `hey-claude` **fails fast with a
+friendly message** the moment you start it on an unsupported OS/CPU, or without
+MLX Whisper installed — before any model loads. Run `hey-claude doctor` any time
+for the full environment check.
+
+---
+
+## Install
 
 ```bash
 # Homebrew (recommended) — installs PortAudio + a Python env for you

@@ -31,7 +31,7 @@ MODEL = "tts_models/en/vctk/vits"
 
 # (pack, speaker, description, {event: [phrases]}).  >1 phrase => rotating variants.
 PERSONAS: list[tuple[str, str, str, dict]] = [
-    ("assistant", "p225", "Polite assistant — \"Yes?\" · \"On it!\"", {
+    ("sleepy", "p225", "Sleepy / drowsy — \"Yes?\" · \"On it!\"", {
         "wake": ["Yes?", "How can I help?"], "endpoint": ["Let me see."],
         "dispatch": ["On it!"], "cancel": ["Never mind."], "error": ["Something went wrong."]}),
     ("butler", "p226", "Formal butler — \"You rang?\" · \"Right away.\"", {
@@ -43,7 +43,7 @@ PERSONAS: list[tuple[str, str, str, dict]] = [
     ("captain", "p254", "Ship captain — \"Report.\" · \"Engage.\"", {
         "wake": ["Report.", "Standing by."], "endpoint": ["Acknowledged."],
         "dispatch": ["Engage."], "cancel": ["Belay that."], "error": ["We have a problem."]}),
-    ("android", "p270", "Flat AI — \"Listening.\" · \"Executing.\"", {
+    ("nadia", "p270", "Nadia — \"Listening.\" · \"Executing.\"", {
         "wake": ["Listening.", "Awaiting input."], "endpoint": ["Processing."],
         "dispatch": ["Executing."], "cancel": ["Aborted."], "error": ["Error detected."]}),
     ("cheery", "p228", "Upbeat helper — \"Hi there!\" · \"You got it!\"", {

@@ -14,7 +14,7 @@ spoken "Voiceover Pack" (male / female, also CC0).
 
 ## Voice packs — Coqui VCTK-VITS (CC BY 4.0)
 
-The neural voice packs — `assistant`, `butler`, `buddy`, `captain`, `android`,
+The neural voice packs — `sleepy`, `butler`, `buddy`, `captain`, `nadia`,
 `cheery`, `chill`, `pro`, `soft`, `hype`, `crisp`, `scientist`, `coach`, `warm`,
 `terse` — are generated **on-device** with Coqui TTS (`tts_models/en/vctk/vits`).
 No TTS web demos were scraped; nothing proprietary is redistributed.

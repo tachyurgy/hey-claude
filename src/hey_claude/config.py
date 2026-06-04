@@ -127,12 +127,12 @@ class Config:
     # --- feedback ---------------------------------------------------------
     chime: bool = True  # play sounds on wake / dispatch / cancel / error
     verbose: bool = True
-    # Active soundpack: reskins all five event cues at once. "clicks" (default),
-    # "metal", "thud", the spoken "announcer"/"narrator", a neural-TTS voice like
-    # "assistant"/"butler"/"android"/… (see `hey-claude sounds packs`), or the
-    # name of a custom pack folder in <config>/soundpacks/. Per-event sound_*
-    # overrides below still win.
-    soundpack: str = "clicks"
+    # Active soundpack: reskins all five event cues at once. "warm" (default, a
+    # neural-TTS voice), "clicks"/"metal"/"thud", the spoken "announcer"/"narrator",
+    # or another neural voice like "butler"/"nadia"/"sleepy"/… (see `hey-claude
+    # sounds packs`), or the name of a custom pack folder in <config>/soundpacks/.
+    # Per-event sound_* overrides below still win.
+    soundpack: str = "warm"
     # Sound overrides — absolute paths to .aiff/.wav/.mp3 etc. Empty => the
     # active soundpack's cue. Set to "none" to silence just that one event.
     sound_wake: str = ""      # played when the wake word is detected (start of listening)

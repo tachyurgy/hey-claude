@@ -36,6 +36,41 @@ class _Report:
         print(f"  {BAD} {label}" + (f" — {detail}" if detail else ""))
 
 
+REQUIREMENTS_URL = "https://github.com/tachyurgy/hey-claude#requirements"
+
+
+def preflight() -> str | None:
+    """Fast, friendly gate run *before* the listener loads heavy audio/ML deps.
+
+    Returns a user-facing message (and the caller exits) when hey-claude simply
+    can't run on this machine — wrong OS, wrong CPU, or MLX Whisper missing — so
+    nobody waits through model loading only to hit a wall. Returns None when the
+    hard requirements are met (``doctor`` still does the full, detailed check).
+    """
+    if sys.platform != "darwin":
+        return (
+            f"✗ hey-claude runs on macOS only.\n"
+            f"  It transcribes your speech with MLX Whisper on the Apple-Silicon GPU,\n"
+            f"  which doesn't exist on {sys.platform!r} (Linux/Windows aren't supported).\n"
+            f"  Requirements: {REQUIREMENTS_URL}"
+        )
+    if platform.machine() != "arm64":
+        return (
+            f"✗ hey-claude needs an Apple-Silicon Mac (M1 or newer).\n"
+            f"  MLX Whisper runs on the Metal GPU and won't work on {platform.machine()!r} (Intel).\n"
+            f"  Requirements: {REQUIREMENTS_URL}"
+        )
+    try:
+        import mlx_whisper  # noqa: F401, PLC0415
+    except ModuleNotFoundError:
+        return (
+            "✗ MLX Whisper isn't installed — hey-claude needs it to turn speech into a command.\n"
+            "  Install:    pip install mlx-whisper\n"
+            "  Full check: hey-claude doctor"
+        )
+    return None
+
+
 def _claude_version(claude_bin: str) -> tuple[int, ...] | None:
     try:
         out = subprocess.run([claude_bin, "--version"], capture_output=True, text=True, timeout=15).stdout

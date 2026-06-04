@@ -36,6 +36,14 @@ def _apply_run_overrides(cfg: Config, args: argparse.Namespace) -> None:
 
 
 def cmd_run(args: argparse.Namespace) -> int:
+    # Friendly fast-fail before we import/spin up anything heavy: bail early on an
+    # unsupported OS/CPU or a missing MLX Whisper rather than wasting the user's
+    # time loading models only to crash.
+    problem = doctor.preflight()
+    if problem:
+        print(problem, file=sys.stderr)
+        return 2
+
     # Import here so non-listening commands (doctor, config, train) don't pay the
     # cost of audio/ML imports or fail when those deps are absent.
     from .listener import Listener
@@ -205,7 +213,7 @@ def cmd_sounds(args: argparse.Namespace) -> int:
             resolved = sounds.event_sound(ev, override, cfg.soundpack)
             src = override if override else f"{active}:{resolved.stem if resolved else '—'}"
             print(f"  {ev:<9} {src:<24} {desc}")
-        print("\nWhole new voice:  hey-claude sounds pack assistant   (browse all: hey-claude sounds packs)")
+        print("\nWhole new voice:  hey-claude sounds pack butler   (browse all: hey-claude sounds packs)")
         print("Preview one:      hey-claude sounds play Glass")
         print("Override one:     hey-claude sounds set dispatch /path/to/sound.wav")
         print("Silence one:      hey-claude sounds set cancel none")

@@ -105,16 +105,16 @@ STUDIO = "studio"
 # spoken/neural-voice packs. SFX are CC0 (Kenney); the voice packs are local
 # neural TTS (Coqui VCTK, CC BY) — see soundpacks/SOURCES.md.
 BUILTIN_PACKS: dict[str, str] = {
-    "clicks":    "Clean UI clicks — crisp, minimal (default).",
+    "clicks":    "Clean UI clicks — crisp, minimal.",
     "metal":     "Metal & bells — clanks, plates, struck tin.",
     "thud":      "Soft thuds — muted, low, physical.",
     "announcer": "Game announcer (male) — \"ready\", \"go\", \"mission completed\".",
     "narrator":  "Game narrator (female) — \"ready\", \"go\", \"mission completed\".",
-    "assistant": "Voice — polite assistant (\"Yes?\" · \"On it!\").",
+    "sleepy":    "Voice — sleepy / drowsy (\"Yes?\" · \"On it!\").",
     "butler":    "Voice — formal butler (\"You rang?\" · \"Right away.\").",
     "buddy":     "Voice — casual buddy (\"What's up?\" · \"On it.\").",
     "captain":   "Voice — ship captain (\"Report.\" · \"Engage.\").",
-    "android":   "Voice — flat AI (\"Listening.\" · \"Executing.\").",
+    "nadia":     "Voice — Nadia (\"Listening.\" · \"Executing.\").",
     "cheery":    "Voice — upbeat helper (\"Hi there!\" · \"You got it!\").",
     "chill":     "Voice — laid-back (\"Yeah?\" · \"On it.\").",
     "pro":       "Voice — professional (\"Ready.\" · \"Dispatching now.\").",
@@ -123,7 +123,7 @@ BUILTIN_PACKS: dict[str, str] = {
     "crisp":     "Voice — crisp secretary (\"Yes?\" · \"Right away.\").",
     "scientist": "Voice — curious scientist (\"Hmm?\" · \"Initiating.\").",
     "coach":     "Voice — coach (\"Talk to me.\" · \"Let's do it.\").",
-    "warm":      "Voice — warm & kind (\"I'm here.\" · \"On it now.\").",
+    "warm":      "Voice — warm & kind (\"I'm here.\" · \"On it now.\") — default.",
     "terse":     "Voice — minimalist (\"Yep.\" · \"Sent.\").",
 }
 
