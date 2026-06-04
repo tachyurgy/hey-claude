@@ -1,12 +1,14 @@
 # Show HN draft
 
-A starting point for the launch post — tighten before you submit.
+Ready to submit (v0.2.0). Skim once for voice, then post.
 
 ---
 
 **Title:** Show HN: Hey Claude – an on-device voice wake word that dispatches Claude Code agents
 
 **URL:** https://github.com/tachyurgy/hey-claude
+
+**Install (try it):** `pipx install git+https://github.com/tachyurgy/hey-claude@v0.2.0` (macOS / Apple Silicon)
 
 **Body:**
 
@@ -15,7 +17,9 @@ agent actually start working — without piping my mic to a cloud service all da
 
 hey-claude is a macOS tool that listens for "hey claude," transcribes whatever
 you say next, and dispatches it as a Claude Code background agent
-(`claude --bg`). You keep talking; the agents stack up in `claude agents`.
+(`claude --bg`). You keep talking; the agents stack up in `claude agents`. You
+choose which directory the agents start in, so a wake from anywhere works on the
+project you mean.
 
 The whole thing is local until the very last step:
 
@@ -39,6 +43,11 @@ Design notes I found interesting:
 
 No API key to listen, no per-user signup, MIT-licensed. There's also a
 no-model-needed fallback engine that just uses Whisper for the wake word too.
+
+It also has a bit of fun with feedback: instead of one stock beep, the audible
+cues are five character voices (a warm Southern narrator, a precise British
+robo-butler, …) that each shuffle through several in-character lines, so you
+rarely hear the same "on it" twice — and you can drop in your own pack.
 
 Feedback welcome — especially on the wake-word false-positive/latency trade-off
 and the permission UX.
