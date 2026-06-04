@@ -77,7 +77,7 @@ def cmd_agent(args: argparse.Namespace) -> int:
         preset = agents.get(args.name)
         if preset is None:
             print(f"✗ unknown agent preset: {args.name!r}", file=sys.stderr)
-            print(f"  choices: {', '.join(agents.PRESETS)}  (or edit launch_template directly)",
+            print(f"  choices: {', '.join(agents.PRESETS)}  (or set a custom one: hey-claude agent set '<cmd>')",
                   file=sys.stderr)
             return 1
         cfg.launch_template = preset.template
@@ -86,9 +86,24 @@ def cmd_agent(args: argparse.Namespace) -> int:
         print(f"✓ agent = {preset.key}  —  {preset.summary}")
         if preset.template:
             print(f"  launch_template = {preset.template!r}")
-            print("  Tune it any time:  hey-claude config set launch_template '<your command>'")
+            print("  Tune it any time:  hey-claude agent set '<your command>'")
         else:
             print(f"  launch_mode = {preset.launch_mode!r}  (native Claude Code launch)")
+        return 0
+
+    if action == "set":
+        template = args.template
+        err = agents.validate_template(template)
+        if err:
+            print(f"✗ {err}", file=sys.stderr)
+            print(f"  placeholders: {' '.join(agents.PLACEHOLDERS)}", file=sys.stderr)
+            return 1
+        cfg.launch_template = template.strip()
+        cfg.save()
+        print(f"✓ agent command set — every heard task now runs:")
+        print(f"    {cfg.launch_template}")
+        print("  ({command} is filled with your spoken task as a single, un-split argument)")
+        print(f"  saved to {config_path()}")
         return 0
 
     # list (default)
@@ -102,7 +117,7 @@ def cmd_agent(args: argparse.Namespace) -> int:
             print(f"    launch_template: {p.template}")
     print(f"\nActive: {active}")
     print("Switch:            hey-claude agent use <preset>")
-    print("Full control:      hey-claude config set launch_template '<command with {command}>'")
+    print("Custom command:    hey-claude agent set '<command with {command}>'")
     print("Placeholders:      {command} {name} {permission_mode} {model} {claude_bin}")
     return 0
 
@@ -126,6 +141,30 @@ def cmd_uninstall(args: argparse.Namespace) -> int:
     return rc
 
 
+def cmd_wake(args: argparse.Namespace) -> int:
+    """Change the wake phrase in one step (with the openWakeWord caveat made plain)."""
+    cfg = Config.load()
+    phrase = " ".join(args.phrase).strip() if isinstance(args.phrase, list) else (args.phrase or "").strip()
+    if not phrase:
+        print(f'current wake phrase: "{cfg.wake_phrase}"')
+        print('change it:  hey-claude wake "<phrase>"')
+        return 0
+    cfg.wake_phrase = phrase
+    cfg.save()
+    print(f'✓ wake phrase = "{phrase}"  ({config_path()})')
+    # The whisper engine matches the phrase from text, so it just works. The
+    # low-power openWakeWord engine needs a model trained for that exact phrase.
+    if cfg.engine == "openwakeword" and phrase.lower() != "hey claude":
+        print("\n  ⚠ engine is 'openwakeword', which needs a model trained for this exact phrase.")
+        print("    Two ways forward:")
+        print("      • zero-setup, any phrase:   hey-claude config set engine whisper")
+        print("      • keep low-power detection:  train/import a model →  hey-claude train")
+        print("                                   then  hey-claude import-model <file.onnx>")
+    else:
+        print('  say:  "' + phrase + ', <your task>"')
+    return 0
+
+
 _SOUND_EVENTS = {
     "wake": ("sound_wake", "before — plays when the wake word fires"),
     "endpoint": ("sound_endpoint", "endpoint — plays when you stop talking / capture ends"),
@@ -143,22 +182,33 @@ def cmd_sounds(args: argparse.Namespace) -> int:
     action = args.sounds_action
     cfg = Config.load()
 
+    if action == "packs":
+        return _sounds_packs(cfg, sounds)
+
+    if action == "pack":
+        return _sounds_pack_set(cfg, sounds, args.name, _time)
+
     if action in (None, "list"):
+        active = cfg.soundpack or sounds.STUDIO
+        print(f"Active soundpack: {active}   (switch: hey-claude sounds pack <name> · browse: hey-claude sounds packs)\n")
         avail = sounds.catalog_paths()
-        print("Sound catalog (built-in macOS sounds) — assign with `hey-claude sounds set <event> <name>`:\n")
+        print("Sound catalog (built-in macOS sounds) — assign one event with `hey-claude sounds set <event> <name>`:\n")
         for role in ("before", "endpoint", "after", "cancel", "error"):
             names = [n for n, (r, _) in sounds.CATALOG.items() if r == role and n in avail]
             if names:
                 print(f"  {role}:")
                 for n in names:
                     print(f"    {n:<11} {sounds.CATALOG[n][1]}")
-        print("\nCurrently assigned:")
+        print("\nCurrently playing (override > soundpack > default):")
         for ev, (field, desc) in _SOUND_EVENTS.items():
-            val = getattr(cfg, field) or f"(default: {sounds.DEFAULTS[ev].stem})"
-            print(f"  {ev:<9} {val:<22} {desc}")
-        print("\nPreview one:  hey-claude sounds play Glass")
-        print("Use a file:   hey-claude sounds set dispatch /path/to/sound.wav")
-        print("Silence one:  hey-claude sounds set cancel none")
+            override = getattr(cfg, field)
+            resolved = sounds.event_sound(ev, override, cfg.soundpack)
+            src = override if override else f"{active}:{resolved.stem if resolved else '—'}"
+            print(f"  {ev:<9} {src:<24} {desc}")
+        print("\nWhole new voice:  hey-claude sounds pack assistant   (browse all: hey-claude sounds packs)")
+        print("Preview one:      hey-claude sounds play Glass")
+        print("Override one:     hey-claude sounds set dispatch /path/to/sound.wav")
+        print("Silence one:      hey-claude sounds set cancel none")
         return 0
 
     if action == "play":
@@ -187,14 +237,57 @@ def cmd_sounds(args: argparse.Namespace) -> int:
         return 0
 
     if action == "test":
-        for ev in ("wake", "endpoint", "dispatch", "cancel", "error"):
+        print(f"Playing every event from soundpack '{cfg.soundpack or sounds.STUDIO}':")
+        for ev in sounds.EVENTS:
             field = _SOUND_EVENTS[ev][0]
-            path = sounds.resolve(ev, getattr(cfg, field))
+            path = sounds.event_sound(ev, getattr(cfg, field), cfg.soundpack)
             print(f"  {ev:<9} {path}")
             sounds.play(path, True)
             _time.sleep(1.3)
         return 0
     return 1
+
+
+def _sounds_packs(cfg: Config, sounds) -> int:
+    """List every soundpack (built-in + custom) and how to make your own."""
+    active = cfg.soundpack or sounds.STUDIO
+    print("Soundpacks — reskin all five cues at once (a pack rotates through variants):\n")
+    for name, (src, desc) in sounds.list_packs().items():
+        marker = "  ← active" if name == active else ""
+        tag = "" if src == "built-in" else f"  [{src}]"
+        print(f"  • {name:<9}{tag}{marker}")
+        print(f"      {desc}")
+    print(f"\nSwitch:   hey-claude sounds pack <name>      (e.g. hey-claude sounds pack arcade)")
+    print(f"Active:   {active}")
+    print("\nRoll your own — no code, just audio files:")
+    print(f"  1. mkdir -p {sounds.user_packs_dir()}/<name>")
+    print("  2. drop in wake / endpoint / dispatch / cancel / error  (.wav/.aiff/.mp3 …);")
+    print("     add wake-2.wav, wake-3.wav … and that cue rotates between them.")
+    print("  3. hey-claude sounds pack <name>")
+    print("  (Any cue you omit falls back to the studio default — partial packs are fine.)")
+    return 0
+
+
+def _sounds_pack_set(cfg: Config, sounds, name: str, _time) -> int:
+    """Activate a soundpack by name, then preview its wake + dispatch cues."""
+    name = (name or "").strip()
+    if sounds.pack_dir(name) is None:
+        print(f"✗ no soundpack named {name!r}.", file=sys.stderr)
+        print(f"  available: {', '.join(sounds.list_packs())}", file=sys.stderr)
+        print("  see all + how to add your own:  hey-claude sounds packs", file=sys.stderr)
+        return 1
+    cfg.soundpack = name
+    cfg.save()
+    desc = sounds.list_packs().get(name, ("", ""))[1]
+    print(f"✓ soundpack = {name}  —  {desc}")
+    print(f"  saved to {config_path()}")
+    for ev in ("wake", "dispatch"):
+        path = sounds.event_sound(ev, "", name)
+        if path:
+            print(f"  ♪ {ev}: {path.name}")
+            sounds.play(path, True)
+            _time.sleep(1.2)
+    return 0
 
 
 def cmd_config(args: argparse.Namespace) -> int:
@@ -283,22 +376,31 @@ def build_parser() -> argparse.ArgumentParser:
     use_p.add_argument("name")
     models_p.set_defaults(func=cmd_models)
 
-    agent_p = sub.add_parser("agent", help="choose which agent a heard command launches")
+    wake_p = sub.add_parser("wake", help='change the wake phrase (e.g. hey-claude wake "ok claude")')
+    wake_p.add_argument("phrase", nargs="*", help='the spoken phrase, e.g. "hey claude"')
+    wake_p.set_defaults(func=cmd_wake)
+
+    agent_p = sub.add_parser("agent", help="choose / customize which agent a heard command launches")
     agent_sub = agent_p.add_subparsers(dest="agent_action")
     agent_sub.add_parser("list", help="list agent presets and the active one")
     agent_sub.add_parser("show", help="print the active agent")
     au = agent_sub.add_parser("use", help="switch to an agent preset (claude-bg, codex, aider, …)")
     au.add_argument("name")
+    aset = agent_sub.add_parser("set", help="set a fully custom dispatch command (must contain {command})")
+    aset.add_argument("template", help="e.g. 'codex exec {command}'  or  'my-agent --task {command}'")
     agent_p.set_defaults(func=cmd_agent)
 
-    snd_p = sub.add_parser("sounds", help="browse / preview / assign earcons")
+    snd_p = sub.add_parser("sounds", help="browse / preview / assign earcons & soundpacks")
     snd_sub = snd_p.add_subparsers(dest="sounds_action")
-    snd_sub.add_parser("list", help="show the catalog and current assignments")
+    snd_sub.add_parser("list", help="show the active pack, catalog, and current cues")
+    snd_sub.add_parser("packs", help="list soundpacks and how to add your own")
+    spk = snd_sub.add_parser("pack", help="switch the active soundpack (studio·arcade·zen·starship·pulse)")
+    spk.add_argument("name", help="pack name (built-in or a custom folder you added)")
     sp = snd_sub.add_parser("play", help="preview a sound by catalog name or file path"); sp.add_argument("name")
-    ss = snd_sub.add_parser("set", help="assign a sound to an event")
+    ss = snd_sub.add_parser("set", help="override one event's sound (path, name, or 'none')")
     ss.add_argument("event", help="wake | endpoint | dispatch | cancel | error")
     ss.add_argument("name", help="catalog name, file path, system-sound name, or 'none'")
-    snd_sub.add_parser("test", help="play all four currently-assigned event sounds")
+    snd_sub.add_parser("test", help="play every event cue from the active soundpack")
     snd_p.set_defaults(func=cmd_sounds)
 
     app_p = sub.add_parser("app", help="build a .app wrapper (stable mic permission)")

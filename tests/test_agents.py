@@ -32,3 +32,10 @@ def test_claude_builtin_clears_template():
     cfg.launch_mode = p.launch_mode
     assert cfg.launch_template == ""
     assert cfg.launch_mode == "bg"
+
+
+def test_validate_template_requires_command_placeholder():
+    assert agents.validate_template("codex exec {command}") is None
+    assert agents.validate_template("") is not None        # empty
+    assert agents.validate_template("codex exec") is not None  # no {command}
+    assert "{command}" in agents.validate_template("foo bar")

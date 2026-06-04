@@ -56,7 +56,11 @@ heyclaude = "hey_claude.cli:main"
 # as build artifacts to force them into the wheel + sdist as package data. The
 # synthesized earcons (*.wav) are listed too so they're always packaged.
 [tool.hatch.build]
-artifacts = ["src/hey_claude/models/*.onnx", "src/hey_claude/earcons/*.wav"]
+artifacts = [
+    "src/hey_claude/models/*.onnx",
+    "src/hey_claude/earcons/*.wav",
+    "src/hey_claude/soundpacks/**/*.wav",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hey_claude"]

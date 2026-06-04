@@ -128,6 +128,9 @@ def run(cfg: Config) -> int:
     print("  • running from Terminal: grant Terminal mic access on first prompt")
     print("  • running headless/at login: install the .app —  hey-claude app")
     print()
+    from . import onboarding  # local import: keeps doctor import-light
+    onboarding.print_tips(cfg)
+    print()
     if r.failed:
         print(f"{BAD} not ready — resolve the ✗ items above.")
         return 1

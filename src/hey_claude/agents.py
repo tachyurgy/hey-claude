@@ -77,6 +77,25 @@ def get(key: str) -> Preset | None:
     return PRESETS.get(key)
 
 
+# Placeholders a launch_template may use (substituted per-token, never re-split).
+PLACEHOLDERS = ("{command}", "{name}", "{permission_mode}", "{model}", "{claude_bin}")
+
+
+def validate_template(template: str) -> str | None:
+    """Return an error string if ``template`` can't dispatch a command, else None.
+
+    The only hard requirement is a ``{command}`` placeholder — without it the
+    spoken task would never reach the agent. We also reject the obvious foot-gun
+    of an empty command word.
+    """
+    t = (template or "").strip()
+    if not t:
+        return "empty template — give a command, e.g. 'codex exec {command}'"
+    if "{command}" not in t:
+        return "template must contain the {command} placeholder (where the spoken task goes)"
+    return None
+
+
 def describe_active(launch_template: str, launch_mode: str) -> str:
     """Best-effort label for the currently-configured agent."""
     tmpl = (launch_template or "").strip()

@@ -13,6 +13,11 @@ from typing import Optional
 
 _SOUNDS = Path("/System/Library/Sounds")
 
+# Audio file extensions we recognize inside a soundpack folder (afplay handles
+# all of these). Order is the tie-break preference when several variants of one
+# event share a stem.
+_AUDIO_EXTS = (".wav", ".aiff", ".aif", ".caf", ".mp3", ".m4a", ".aac", ".flac")
+
 # Custom earcons synthesized for hey-claude (see scripts/gen_earcons.py), bundled
 # as package data so the tool sounds like a deliberate product, not a pile of
 # macOS system beeps. We fall back to a system sound per event if a bundled file
@@ -75,6 +80,138 @@ def catalog_paths() -> dict[str, Path]:
             if (_SOUNDS / f"{name}.aiff").exists()}
 
 
+# --- soundpacks ------------------------------------------------------------
+# A *soundpack* is a folder of event cues. Selecting one (config `soundpack`)
+# reskins all five events at once, and any event with multiple variant files
+# rotates so a repeated cue (the wake chime especially) never feels robotic.
+#
+# Layout — one file per event, optionally several numbered variants:
+#     <pack>/wake.wav      <pack>/wake-2.wav   (rotates: wake, wake-2, wake, …)
+#     <pack>/endpoint.wav  <pack>/dispatch.wav
+#     <pack>/cancel.wav    <pack>/error.wav
+# Any file whose stem is the event name, or starts with "<event>-"/"<event>_",
+# counts as a variant; an "<event>/" subfolder of audio works too. A missing
+# event falls back to the built-in default, so a partial pack still makes noise.
+
+EVENTS = ("wake", "endpoint", "dispatch", "cancel", "error")
+
+# Packs live as folders under soundpacks/. The default is "clicks". "studio" is
+# the bundled synthesized earcons (the _EARCONS dir) — kept as the silent
+# fallback for any event a pack is missing, even though it's no longer a
+# user-facing pack in the catalog below.
+_PACKS_DIR = Path(__file__).resolve().parent / "soundpacks"
+STUDIO = "studio"
+# Catalog order = display order. clicks (default) first, then SFX, then the
+# spoken/neural-voice packs. SFX are CC0 (Kenney); the voice packs are local
+# neural TTS (Coqui VCTK, CC BY) — see soundpacks/SOURCES.md.
+BUILTIN_PACKS: dict[str, str] = {
+    "clicks":    "Clean UI clicks — crisp, minimal (default).",
+    "metal":     "Metal & bells — clanks, plates, struck tin.",
+    "thud":      "Soft thuds — muted, low, physical.",
+    "announcer": "Game announcer (male) — \"ready\", \"go\", \"mission completed\".",
+    "narrator":  "Game narrator (female) — \"ready\", \"go\", \"mission completed\".",
+    "assistant": "Voice — polite assistant (\"Yes?\" · \"On it!\").",
+    "butler":    "Voice — formal butler (\"You rang?\" · \"Right away.\").",
+    "buddy":     "Voice — casual buddy (\"What's up?\" · \"On it.\").",
+    "captain":   "Voice — ship captain (\"Report.\" · \"Engage.\").",
+    "android":   "Voice — flat AI (\"Listening.\" · \"Executing.\").",
+    "cheery":    "Voice — upbeat helper (\"Hi there!\" · \"You got it!\").",
+    "chill":     "Voice — laid-back (\"Yeah?\" · \"On it.\").",
+    "pro":       "Voice — professional (\"Ready.\" · \"Dispatching now.\").",
+    "soft":      "Voice — soft-spoken (\"Mm-hmm?\" · \"Done.\").",
+    "hype":      "Voice — hype man (\"Let's go!\" · \"Sending it!\").",
+    "crisp":     "Voice — crisp secretary (\"Yes?\" · \"Right away.\").",
+    "scientist": "Voice — curious scientist (\"Hmm?\" · \"Initiating.\").",
+    "coach":     "Voice — coach (\"Talk to me.\" · \"Let's do it.\").",
+    "warm":      "Voice — warm & kind (\"I'm here.\" · \"On it now.\").",
+    "terse":     "Voice — minimalist (\"Yep.\" · \"Sent.\").",
+}
+
+# Per-(pack, event) round-robin cursor: maps to [variant_files, next_index] so
+# rotation persists across the long-running listen loop. Re-seeded if the variant
+# set changes (e.g. the user adds a file mid-run).
+_rotation: dict[tuple[str, str], list] = {}
+
+
+def user_packs_dir() -> Path:
+    """Where a user drops their own packs: ``<config>/soundpacks/<name>/``."""
+    from .config import config_home  # local import keeps this module import-light
+    return config_home() / "soundpacks"
+
+
+def pack_dir(name: str) -> Optional[Path]:
+    """Resolve a pack name to its folder. A user pack shadows a builtin of the
+    same name; ``studio`` maps to the bundled earcons."""
+    name = (name or "").strip()
+    if not name:
+        return None
+    user = user_packs_dir() / name
+    if user.is_dir():
+        return user
+    if name == STUDIO:
+        return _EARCONS if _EARCONS.is_dir() else None
+    builtin = _PACKS_DIR / name
+    return builtin if builtin.is_dir() else None
+
+
+def list_packs() -> dict[str, tuple[str, str]]:
+    """All available packs → (source, description). Builtins first (in their
+    canonical order), then any custom packs found in the user dir."""
+    packs: dict[str, tuple[str, str]] = {}
+    for name, desc in BUILTIN_PACKS.items():
+        src = "custom" if (user_packs_dir() / name).is_dir() else "built-in"
+        packs[name] = (src, desc)
+    user_root = user_packs_dir()
+    if user_root.is_dir():
+        for child in sorted(user_root.iterdir()):
+            if child.is_dir() and child.name not in packs:
+                packs[child.name] = ("custom", f"your pack — {child}")
+    return packs
+
+
+def pack_event_files(pack: str, event: str) -> list[Path]:
+    """Sorted variant files for ``event`` within ``pack`` (empty if none)."""
+    d = pack_dir(pack)
+    if d is None:
+        return []
+    found: list[Path] = []
+    subdir = d / event
+    if subdir.is_dir():
+        found = [p for p in subdir.iterdir()
+                 if p.is_file() and p.suffix.lower() in _AUDIO_EXTS]
+    else:
+        for p in d.iterdir():
+            if not p.is_file() or p.suffix.lower() not in _AUDIO_EXTS:
+                continue
+            stem = p.stem
+            if stem == event or stem.startswith(f"{event}-") or stem.startswith(f"{event}_"):
+                found.append(p)
+    # Bare "<event>" first, then numbered variants in name order, so rotation
+    # leads with the primary cue (wake.wav, then wake-2.wav, …).
+    return sorted(found, key=lambda p: (0 if p.stem == event else 1, p.name))
+
+
+def pack_event_sound(pack: str, event: str) -> Optional[Path]:
+    """Next sound for ``event`` in ``pack``, rotating through its variants.
+
+    Returns ``None`` when the pack has nothing for this event (the caller falls
+    back to the built-in default), so a partial custom pack never goes silent.
+    """
+    files = pack_event_files(pack, event)
+    if not files:
+        return None
+    if len(files) == 1:
+        return files[0]
+    key = (pack, event)
+    state = _rotation.get(key)
+    if state is None or state[0] != files:  # first use, or the variant set changed
+        state = [files, 0]
+        _rotation[key] = state
+    files, idx = state
+    state[1] = (idx + 1) % len(files)
+    return files[idx]
+
+
 def resolve(event: str, override: str = "") -> Optional[Path]:
     """Pick the sound file for an event, honoring a config override.
 
@@ -96,6 +233,29 @@ def resolve(event: str, override: str = "") -> Optional[Path]:
         if named.exists():
             return named
         return None  # configured but missing — stay quiet rather than guess
+    return DEFAULTS.get(event)
+
+
+def event_sound(event: str, override: str = "", pack: str = "") -> Optional[Path]:
+    """The sound to actually play for ``event``, honoring precedence:
+
+    1. a per-event ``sound_<event>`` override (a path/name, or "none" to silence);
+    2. the active ``pack`` (rotating through its variants for this event);
+    3. the built-in default earcon.
+
+    A per-event override is the most specific intent, so it wins even over a
+    selected pack. With no override and no pack hit, we fall through to the
+    studio default — feedback never goes silent by accident.
+    """
+    override = (override or "").strip()
+    if override:
+        # "none"/path/name all handled here; an explicit override always wins.
+        return resolve(event, override)
+    pack = (pack or "").strip()
+    if pack and pack != STUDIO:
+        chosen = pack_event_sound(pack, event)
+        if chosen is not None:
+            return chosen
     return DEFAULTS.get(event)
 
 

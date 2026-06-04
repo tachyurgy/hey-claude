@@ -97,6 +97,10 @@ def install() -> int:
     print(f"✓ installed and loaded launchd agent: {path}")
     print(f"  logs: {log_path()}")
     print("  if audio stays silent, grant mic permission via the .app:  hey-claude app")
+    print()
+    from . import onboarding  # local import: avoid pulling config/audio at module load
+    from .config import Config
+    onboarding.print_tips(Config.load())
     return 0
 
 

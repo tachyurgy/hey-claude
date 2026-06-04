@@ -94,7 +94,9 @@ class Config:
     # --- command capture + transcription ----------------------------------
     samplerate: int = 16000
     mic_device: str = ""  # sounddevice device name/index; "" => system default
-    silence_ms: int = 800  # trailing silence that ends the command
+    silence_ms: int = 1000  # trailing silence that ends the command once it's been spoken
+    endpoint_grace_ms: int = 2000  # longer silence tolerated while they've barely begun
+    #                                (an indecisive/thinking speaker isn't cut off early)
     max_command_seconds: float = 15.0  # hard cap so a stuck mic can't record forever
     preroll_ms: int = 300  # audio kept from just before speech starts (anti-clip)
     vad_start_rms: float = 0.012  # RMS above this counts as speech onset
@@ -125,8 +127,14 @@ class Config:
     # --- feedback ---------------------------------------------------------
     chime: bool = True  # play sounds on wake / dispatch / cancel / error
     verbose: bool = True
-    # Sound overrides — absolute paths to .aiff/.wav/.mp3 etc. Empty => built-in
-    # macOS system sound. Set to "none" to silence just that one event.
+    # Active soundpack: reskins all five event cues at once. "clicks" (default),
+    # "metal", "thud", the spoken "announcer"/"narrator", a neural-TTS voice like
+    # "assistant"/"butler"/"android"/… (see `hey-claude sounds packs`), or the
+    # name of a custom pack folder in <config>/soundpacks/. Per-event sound_*
+    # overrides below still win.
+    soundpack: str = "clicks"
+    # Sound overrides — absolute paths to .aiff/.wav/.mp3 etc. Empty => the
+    # active soundpack's cue. Set to "none" to silence just that one event.
     sound_wake: str = ""      # played when the wake word is detected (start of listening)
     sound_endpoint: str = ""  # played when command capture ends (you stopped talking)
     sound_dispatch: str = ""  # played when an agent is dispatched

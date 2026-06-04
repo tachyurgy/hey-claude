@@ -35,7 +35,10 @@ class Listener:
             "cancel": self.cfg.sound_cancel,
             "error": self.cfg.sound_error,
         }.get(event, "")
-        sounds.play(sounds.resolve(event, override), self.cfg.chime)
+        sounds.play(
+            sounds.event_sound(event, override, self.cfg.soundpack),
+            self.cfg.chime,
+        )
 
     def _clean(self, text: str) -> str:
         text = text.strip()
@@ -87,6 +90,7 @@ class Listener:
         audio = record_command(
             mic,
             silence_ms=self.cfg.silence_ms,
+            grace_ms=self.cfg.endpoint_grace_ms,
             max_seconds=self.cfg.max_command_seconds,
             preroll_ms=self.cfg.preroll_ms,
             start_rms=self.cfg.vad_start_rms,
@@ -152,6 +156,7 @@ class Listener:
                 utt = record_command(
                     mic,
                     silence_ms=self.cfg.silence_ms,
+                    grace_ms=self.cfg.endpoint_grace_ms,
                     max_seconds=self.cfg.max_command_seconds,
                     preroll_ms=self.cfg.preroll_ms,
                     start_rms=self.cfg.vad_start_rms,
