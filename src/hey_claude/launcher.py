@@ -88,13 +88,15 @@ def count_bg_sessions(claude_bin: str) -> int:
         return 0
 
 
+_GATE_SYSTEM = (
+    "You are a single-word classifier for a voice assistant. Reply with exactly "
+    "one token — YES or NO — and nothing else."
+)
 _GATE_PROMPT = (
-    "You are a strict gate for a voice assistant that dispatches spoken "
-    "instructions to a coding agent. Decide whether the transcript below is a "
-    "real, actionable instruction the user means to dispatch — NOT silence, "
-    "filler, throat-clearing, a misfire, a half-sentence fragment, or speech-to-"
-    "text noise. Answer with exactly one word, YES or NO, nothing else.\n\n"
-    "Transcript: "
+    "Is the transcript below a real, actionable instruction the user means to "
+    "dispatch to a coding agent — NOT silence, filler, throat-clearing, a "
+    "misfire, a half-sentence fragment, or speech-to-text noise? Reply YES or "
+    "NO only.\n\nTranscript: "
 )
 
 
@@ -103,13 +105,23 @@ def precheck_command(cfg: Config, command: str) -> tuple[bool, str]:
 
     Returns ``(ok, reason)``. **Fails open**: any error, timeout, or unclear
     answer returns ``ok=True`` so the gate can never block a real command — it
-    only filters out the cases where the model is confident it's junk.
+    only rejects when the model clearly says the transcript is junk.
+
+    We pass ``--setting-sources ""`` so the check ignores user/project settings,
+    hooks, and CLAUDE.md memory: a heavy global CLAUDE.md or a Stop hook would
+    otherwise hijack the one-shot and the model would never answer YES/NO. OAuth
+    keychain auth is unaffected by that flag (unlike ``--bare``).
     """
     try:
         claude_bin = resolve_claude_bin(cfg)
     except LaunchError as exc:
         return True, f"validation skipped ({exc})"
-    args = [claude_bin, "-p", _GATE_PROMPT + command]
+    args = [
+        claude_bin, "-p",
+        "--setting-sources", "",
+        "--system-prompt", _GATE_SYSTEM,
+        _GATE_PROMPT + command,
+    ]
     model = (cfg.validate_model or "").strip()
     if model:
         args += ["--model", model]
@@ -125,7 +137,8 @@ def precheck_command(cfg: Config, command: str) -> tuple[bool, str]:
     if proc.returncode != 0:
         return True, "validation unavailable — dispatching anyway"
     out = (proc.stdout or "").strip().upper()
-    if out.startswith("NO"):
+    first = re.split(r"[\s.,!]+", out, maxsplit=1)[0] if out else ""
+    if first == "NO":
         return False, "not a real command"
     return True, "ok"
 
