@@ -13,7 +13,7 @@ import sys
 from . import sounds
 from .audio import Microphone, MicError, record_command, resolve_device
 from .config import Config
-from .launcher import LaunchError, launch
+from .launcher import LaunchError, launch, precheck_command
 from .transcribe import TranscribeError, transcribe, warm
 from .wake import OpenWakeWordEngine, WakeError, WhisperWakeEngine, match_wake
 
@@ -57,6 +57,13 @@ class Listener:
             self._chime("cancel")
             return
 
+        if self.cfg.validate_command:
+            ok, reason = precheck_command(self.cfg, command)
+            if not ok:
+                self._say(f'  ✗ ignored ({reason}): "{command}"')
+                self._chime("cancel")
+                return
+
         if self.cfg.confirm:
             sys.stdout.write(f'  dispatch "{command}"?  [Enter to send, anything else to cancel] ')
             sys.stdout.flush()
@@ -97,6 +104,7 @@ class Listener:
             start_rms=self.cfg.vad_start_rms,
             keep_rms=self.cfg.vad_keep_rms,
             min_speech_ms=self.cfg.min_command_ms,
+            onset_timeout_s=self.cfg.command_onset_seconds,
         )
         if audio is None:
             self._say("  … no command heard.")

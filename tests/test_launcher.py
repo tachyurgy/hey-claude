@@ -54,3 +54,55 @@ def test_work_dir_resolves_and_expands(tmp_path, monkeypatch):
 def test_work_dir_missing_dir_raises():
     with pytest.raises(LaunchError):
         resolve_work_dir(Config(work_dir="/no/such/dir/xyz123"))
+
+
+# --- command validation gate ----------------------------------------------
+
+def _fake_proc(stdout="", returncode=0):
+    class P:
+        pass
+    p = P()
+    p.stdout = stdout
+    p.stderr = ""
+    p.returncode = returncode
+    return p
+
+
+def test_precheck_rejects_when_model_says_no(monkeypatch):
+    import hey_claude.launcher as L
+    monkeypatch.setattr(L, "resolve_claude_bin", lambda cfg: "claude")
+    monkeypatch.setattr(L.subprocess, "run", lambda *a, **k: _fake_proc("NO"))
+    ok, reason = L.precheck_command(Config(), "uhh")
+    assert ok is False
+
+
+def test_precheck_accepts_when_model_says_yes(monkeypatch):
+    import hey_claude.launcher as L
+    monkeypatch.setattr(L, "resolve_claude_bin", lambda cfg: "claude")
+    monkeypatch.setattr(L.subprocess, "run", lambda *a, **k: _fake_proc("YES"))
+    ok, _ = L.precheck_command(Config(), "fix the failing tests")
+    assert ok is True
+
+
+def test_precheck_fails_open_on_error(monkeypatch):
+    # A missing claude binary, timeout, or nonzero exit must NOT block dispatch.
+    import hey_claude.launcher as L
+
+    def boom(cfg):
+        raise LaunchError("no claude")
+
+    monkeypatch.setattr(L, "resolve_claude_bin", boom)
+    ok, _ = L.precheck_command(Config(), "do the thing")
+    assert ok is True
+
+
+def test_precheck_fails_open_on_timeout(monkeypatch):
+    import hey_claude.launcher as L
+    monkeypatch.setattr(L, "resolve_claude_bin", lambda cfg: "claude")
+
+    def timeout(*a, **k):
+        raise L.subprocess.TimeoutExpired(cmd="claude", timeout=1)
+
+    monkeypatch.setattr(L.subprocess, "run", timeout)
+    ok, _ = L.precheck_command(Config(), "do the thing")
+    assert ok is True

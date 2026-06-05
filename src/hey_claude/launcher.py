@@ -88,6 +88,48 @@ def count_bg_sessions(claude_bin: str) -> int:
         return 0
 
 
+_GATE_PROMPT = (
+    "You are a strict gate for a voice assistant that dispatches spoken "
+    "instructions to a coding agent. Decide whether the transcript below is a "
+    "real, actionable instruction the user means to dispatch — NOT silence, "
+    "filler, throat-clearing, a misfire, a half-sentence fragment, or speech-to-"
+    "text noise. Answer with exactly one word, YES or NO, nothing else.\n\n"
+    "Transcript: "
+)
+
+
+def precheck_command(cfg: Config, command: str) -> tuple[bool, str]:
+    """Ask ``claude -p`` whether ``command`` is a real instruction worth dispatching.
+
+    Returns ``(ok, reason)``. **Fails open**: any error, timeout, or unclear
+    answer returns ``ok=True`` so the gate can never block a real command — it
+    only filters out the cases where the model is confident it's junk.
+    """
+    try:
+        claude_bin = resolve_claude_bin(cfg)
+    except LaunchError as exc:
+        return True, f"validation skipped ({exc})"
+    args = [claude_bin, "-p", _GATE_PROMPT + command]
+    model = (cfg.validate_model or "").strip()
+    if model:
+        args += ["--model", model]
+    try:
+        proc = subprocess.run(
+            args, capture_output=True, text=True,
+            timeout=max(1.0, cfg.validate_timeout_seconds),
+        )
+    except subprocess.TimeoutExpired:
+        return True, "validation timed out — dispatching anyway"
+    except (OSError, subprocess.SubprocessError) as exc:
+        return True, f"validation unavailable ({exc}) — dispatching anyway"
+    if proc.returncode != 0:
+        return True, "validation unavailable — dispatching anyway"
+    out = (proc.stdout or "").strip().upper()
+    if out.startswith("NO"):
+        return False, "not a real command"
+    return True, "ok"
+
+
 def session_name(cfg: Config, command: str) -> str:
     words = re.findall(r"[\w']+", command)[:6]
     slug = " ".join(words) if words else "voice task"

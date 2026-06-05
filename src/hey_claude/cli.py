@@ -443,7 +443,7 @@ def build_parser() -> argparse.ArgumentParser:
     snd_sub = snd_p.add_subparsers(dest="sounds_action")
     snd_sub.add_parser("list", help="show the active pack, catalog, and current cues")
     snd_sub.add_parser("packs", help="list soundpacks and how to add your own")
-    spk = snd_sub.add_parser("pack", help="switch the active soundpack (sawyer·alastair·mara·cass·sol·clicks·metal·thud)")
+    spk = snd_sub.add_parser("pack", help="switch the active soundpack (clicks·metal·thud·sawyer·alastair·mara·cass·sol)")
     spk.add_argument("name", help="pack name (built-in or a custom folder you added)")
     snw = snd_sub.add_parser("new", help="scaffold an empty custom soundpack folder you can drop audio into")
     snw.add_argument("name", help="name for your pack (a folder under your config dir)")

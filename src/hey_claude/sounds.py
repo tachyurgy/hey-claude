@@ -102,21 +102,21 @@ EVENTS = ("wake", "endpoint", "dispatch", "cancel", "error")
 # user-facing pack in the catalog below.
 _PACKS_DIR = Path(__file__).resolve().parent / "soundpacks"
 STUDIO = "studio"
-# Catalog order = display order. The five character voices first (sawyer is the
-# default), then the abstract SFX packs. The voices are five distinct characters
-# — each speaks a different line every time (a shuffle-bag rotation, see
-# pack_event_sound), so you hear the whole personality, not one stock phrase. The
-# SFX packs are CC0 (Kenney); the voices are neural-TTS (Hume Octave) — see
-# soundpacks/SOURCES.md.
+# Catalog order = display order. The abstract SFX packs first ("clicks" is the
+# default — short, crisp, out of your way), then the spoken character voices.
+# The voices each speak a full line per cue (a shuffle-bag rotation, see
+# pack_event_sound) — characterful, but slow and talkative, so they're opt-in,
+# not the default. The SFX packs are CC0 (Kenney); the voices are neural-TTS
+# (Hume Octave) — see soundpacks/SOURCES.md.
 BUILTIN_PACKS: dict[str, str] = {
-    "sawyer":    "Voice — warm Southern campfire narrator (\"I'm all ears, go ahead.\") — default.",
-    "alastair": "Voice — precise British robo-butler (\"I'm listening. Go ahead.\" · \"Dispatching now.\").",
-    "mara":     "Voice — mysterious, gentle wayfarer (\"Go ahead, I'm with you.\" · \"Off it goes.\").",
-    "cass":     "Voice — brisk field scout (\"Listening. Go.\" · \"Command dispatched.\").",
-    "sol":      "Voice — dry, deadpan night-desk (\"Go ahead, I'm listening.\" · \"Done. It's out.\").",
-    "clicks":   "SFX — clean UI clicks, crisp & minimal.",
+    "clicks":   "SFX — clean UI clicks, crisp & minimal — default.",
     "metal":    "SFX — metal & bells: clanks, plates, struck tin.",
     "thud":     "SFX — soft thuds, muted & low.",
+    "sawyer":   "Voice (opt-in) — warm Southern campfire narrator (\"I'm all ears, go ahead.\").",
+    "alastair": "Voice (opt-in) — precise British robo-butler (\"I'm listening. Go ahead.\" · \"Dispatching now.\").",
+    "mara":     "Voice (opt-in) — mysterious, gentle wayfarer (\"Go ahead, I'm with you.\" · \"Off it goes.\").",
+    "cass":     "Voice (opt-in) — brisk field scout (\"Listening. Go.\" · \"Command dispatched.\").",
+    "sol":      "Voice (opt-in) — dry, deadpan night-desk (\"Go ahead, I'm listening.\" · \"Done. It's out.\").",
 }
 
 # Per-(pack, event) shuffle-bag: maps to [variant_files, queue] so rotation

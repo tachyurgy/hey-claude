@@ -98,6 +98,9 @@ class Config:
     endpoint_grace_ms: int = 2000  # longer silence tolerated while they've barely begun
     #                                (an indecisive/thinking speaker isn't cut off early)
     max_command_seconds: float = 15.0  # hard cap so a stuck mic can't record forever
+    command_onset_seconds: float = 5.0  # the "floor": how long to wait for you to
+    #                                    START speaking after the wake word before
+    #                                    giving up — a slow start isn't cut off early
     preroll_ms: int = 300  # audio kept from just before speech starts (anti-clip)
     vad_start_rms: float = 0.012  # RMS above this counts as speech onset
     vad_keep_rms: float = 0.008  # RMS above this sustains an in-progress utterance
@@ -124,6 +127,16 @@ class Config:
     name_prefix: str = "hey-claude"  # background session name prefix
     max_concurrent: int = 0  # 0 = unlimited; otherwise refuse to dispatch past N live bg sessions
     confirm: bool = False  # print the command and require Enter before dispatching
+
+    # --- command validation gate ------------------------------------------
+    # Before dispatching, run a quick `claude -p` YES/NO check that the
+    # transcription is actually a real, actionable instruction — not silence,
+    # filler, a misfire, or Whisper noise. Stops junk from spawning real agents.
+    # Fails OPEN: if the check errors or times out, we dispatch anyway, so the
+    # gate can never brick the tool.
+    validate_command: bool = True
+    validate_model: str = "haiku"  # model for the gate check; "" => claude's default
+    validate_timeout_seconds: float = 25.0
     # Fully custom invocation, overriding launch_mode when non-empty. A shell-style
     # token list; these placeholders are substituted per-token (the {command} token
     # is passed as a single argument, never re-split, so nothing can be injected):
@@ -134,13 +147,14 @@ class Config:
     # --- feedback ---------------------------------------------------------
     chime: bool = True  # play sounds on wake / dispatch / cancel / error
     verbose: bool = True
-    # Active soundpack: reskins all five event cues at once. A character voice —
-    # "sawyer" (default, warm Southern narrator), "alastair"/"mara"/"cass"/"sol" —
-    # or an abstract SFX pack ("clicks"/"metal"/"thud"), or the name of a custom
-    # pack folder you drop in <config>/soundpacks/ (see `hey-claude sounds packs`).
-    # Each voice shuffles through several lines per cue. Per-event sound_*
-    # overrides below still win.
-    soundpack: str = "sawyer"
+    # Active soundpack: reskins all five event cues at once. The default is
+    # "clicks" — short, crisp UI sounds that get out of your way. Other abstract
+    # SFX packs are "metal"/"thud". Spoken character voices ("sawyer"/"alastair"/
+    # "mara"/"cass"/"sol") are also available but OFF by default — they speak a
+    # full line per cue, which is slow and talks over you. Or drop a custom pack
+    # folder in <config>/soundpacks/ (see `hey-claude sounds packs`). Per-event
+    # sound_* overrides below still win.
+    soundpack: str = "clicks"
     # Sound overrides — absolute paths to .aiff/.wav/.mp3 etc. Empty => the
     # active soundpack's cue. Set to "none" to silence just that one event.
     sound_wake: str = ""      # played when the wake word is detected (start of listening)

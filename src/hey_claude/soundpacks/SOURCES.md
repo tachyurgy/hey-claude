@@ -13,7 +13,7 @@ public domain, no attribution required.
 
 ## Character voices — Hume Octave
 
-The five character voices — `sawyer` (warm Southern campfire narrator, *default*),
+The five character voices — `sawyer` (warm Southern campfire narrator),
 `alastair` (precise British robo-butler), `mara` (mysterious wayfarer), `cass`
 (brisk field scout), `sol` (dry deadpan night-desk) — are speech generated with
 **Hume Octave** TTS. Each cue ships several distinct lines that shuffle on

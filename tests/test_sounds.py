@@ -49,10 +49,11 @@ def test_event_map_matches_config_fields_and_defaults():
 
 # --- soundpacks ------------------------------------------------------------
 
-def test_default_pack_is_sawyer_and_every_builtin_resolves():
-    # "sawyer" is the default; every builtin pack covers all five events.
-    assert Config().soundpack == "sawyer"
-    assert "sawyer" in sounds.BUILTIN_PACKS
+def test_default_pack_is_clicks_and_every_builtin_resolves():
+    # "clicks" is the default (short SFX, not a spoken voice); every builtin
+    # pack covers all five events.
+    assert Config().soundpack == "clicks"
+    assert "clicks" in sounds.BUILTIN_PACKS
     for pack in sounds.BUILTIN_PACKS:
         assert sounds.pack_dir(pack) is not None, f"{pack} folder missing"
         for ev in EVENTS:

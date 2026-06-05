@@ -16,7 +16,7 @@ def tips(cfg: Config) -> str:
     """A short, copy-pasteable block showing each knob's current value + how to
     change it, tailored to the live config."""
     phrase = cfg.wake_phrase or "hey claude"
-    pack = cfg.soundpack or "sawyer"
+    pack = cfg.soundpack or "clicks"
     agent = agents.describe_active(cfg.launch_template, cfg.launch_mode)
     n_packs = len(sounds.BUILTIN_PACKS)
     packs_dir = sounds.user_packs_dir()
@@ -27,7 +27,7 @@ def tips(cfg: Config) -> str:
         f'  Wake phrase   now: "{phrase}"',
         '      change:  hey-claude wake "<phrase>"',
         "",
-        f"  Soundpack     now: {pack}    ({n_packs} built in — 5 character voices + clicks/metal/thud)",
+        f"  Soundpack     now: {pack}    ({n_packs} built in — clicks/metal/thud + 5 opt-in voices)",
         f"      browse:  hey-claude sounds packs      switch:  hey-claude sounds pack <name>",
         f"      yours:   hey-claude sounds new <name>   then drop wake/endpoint/dispatch/cancel/error",
         f"               audio in {packs_dir}/<name>/   and  hey-claude sounds pack <name>",
