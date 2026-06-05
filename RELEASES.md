@@ -2,6 +2,25 @@
 
 Reverse-chronological deploy log for hey-claude. (Process details: `RELEASE.md`.)
 
+## 2026-06-05 — v0.3.0 (SFX default, onset floor, dispatch gate)
+- **What deployed:** GitHub tag `v0.3.0` on the public repo. Install via
+  `pipx install git+https://github.com/tachyurgy/hey-claude@v0.3.0`.
+- **Changed:** the spoken character voices talked over the user (a full narrated
+  line per cue) and made the tool feel unusable, so the **default soundpack is
+  now `clicks`** (short SFX); the five voices ship but are opt-in. Added
+  **`command_onset_seconds` (default 5.0)** — a floor on how long it waits for
+  you to start speaking after the wake word. Added a **`claude -p` dispatch gate**
+  (`validate_command`, default on) that YES/NO-classifies the transcript before
+  launching an agent so junk/filler/Whisper-noise no longer spawns agents; runs
+  with `--setting-sources ""` so a heavy CLAUDE.md / Stop hook can't hijack it,
+  and **fails open**. Fixed the README to lead with the working git-URL install
+  (the advertised Homebrew tap + PyPI package aren't published yet). All pinned
+  install refs (README + levelbrook.com) bumped to `@v0.3.0`. 60 tests pass.
+- **How:** version bump → `git tag -a v0.3.0` → `git push origin main v0.3.0`.
+- **Verified:** end-to-end gate test on the pipx-installed CLI (real command
+  PASS, filler BLOCK); installed defaults confirmed (clicks / onset 5.0 / gate
+  on); live install lines on levelbrook.com show `@v0.3.0`.
+
 ## 2026-06-04 — v0.2.0 (character voices + configurable work dir)
 - **What deployed:** GitHub release `v0.2.0` at
   https://github.com/tachyurgy/hey-claude/releases/tag/v0.2.0 (public repo).
