@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "hey-claude"
-version = "0.2.0"
+version = "0.3.0"
 description = "Say \"Hey Claude\" and dispatch a Claude Code background agent — a fully local, on-device voice wake word for your Mac."
 readme = "README.md"
 license = { text = "MIT" }

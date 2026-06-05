@@ -75,12 +75,12 @@ for the full environment check.
 brew install portaudio
 
 # install the CLI in an isolated environment, pinned to a release
-pipx install git+https://github.com/tachyurgy/hey-claude@v0.2.0
+pipx install git+https://github.com/tachyurgy/hey-claude@v0.3.0
 ```
 
 > Homebrew tap (`brew install tachyurgy/tap/hey-claude`) and a plain
 > `pip install hey-claude` from PyPI are coming soon. Until then, the pinned
-> `git+https://…@v0.2.0` install above is the canonical path.
+> `git+https://…@v0.3.0` install above is the canonical path.
 
 Then run the first-run check, which tells you exactly what (if anything) is missing:
 

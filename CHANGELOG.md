@@ -6,6 +6,32 @@ to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-06-05
+
+### Changed
+- **The default soundpack is now `clicks` (short SFX), not a spoken voice.** The
+  character voices speak a full narrated line on every cue, which is slow and
+  talks over the command you're trying to say — distracting enough to make the
+  tool feel unusable out of the box. They still ship, but are now opt-in
+  (`hey-claude sounds pack sawyer`); `clicks`/`metal`/`thud` lead the catalog.
+
+### Added
+- **`command_onset_seconds` (default 5.0) — a "floor" after the wake word.** How
+  long hey-claude waits for you to *start* speaking before giving up, so a slow
+  start is no longer cut off early. Previously a fixed 4 s, internal-only.
+- **`validate_command` (default on) — a dispatch gate.** Before launching an
+  agent, a quick `claude -p` YES/NO check decides whether the transcript is a
+  real, actionable instruction (vs. silence, filler, or Whisper noise), so junk
+  no longer spawns background agents. Tunable via `validate_model` (default
+  `haiku`) and `validate_timeout_seconds`. The check runs with
+  `--setting-sources ""` so a heavy CLAUDE.md or a Stop hook can't hijack it,
+  and **fails open** — any error or timeout dispatches anyway, so it can never
+  block a real command.
+
+### Fixed
+- README install instructions advertised an unpublished Homebrew tap and PyPI
+  package; they now lead with the working `pipx install git+…@v0.3.0` path.
+
 ## [0.2.0] — 2026-06-04
 
 ### Changed
