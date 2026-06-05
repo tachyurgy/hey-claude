@@ -71,15 +71,39 @@ class WakeError(RuntimeError):
 
 
 def ensure_base_models() -> None:
-    """Download openWakeWord's shared melspectrogram + embedding backbone (once)."""
+    """Download only the shared backbone the ONNX engine actually loads (once).
+
+    openWakeWord's own ``download_models()`` helper, called with no arguments,
+    pulls the *entire* pretrained classifier zoo (alexa, hey_mycroft, hey_jarvis,
+    hey_rhasspy, timer — each as both .tflite and .onnx) on top of the backbone.
+    We never use any of those — we load our own ``hey_claude.onnx`` — so fetching
+    them just spams a long download list on first run. The ONNX engine needs
+    exactly three files: ``melspectrogram.onnx``, ``embedding_model.onnx`` and
+    ``silero_vad.onnx``. Grab those and nothing else.
+    """
     try:
         import openwakeword  # noqa: PLC0415
+        from openwakeword.utils import download_file  # noqa: PLC0415
     except ModuleNotFoundError as exc:
         raise WakeError(
             "openwakeword is not installed. Install it with:  pip install openwakeword"
         ) from exc
+
+    import os  # noqa: PLC0415
+
+    target_dir = os.path.join(os.path.dirname(openwakeword.__file__), "resources", "models")
+    os.makedirs(target_dir, exist_ok=True)
+
+    # Feature backbone: their dicts list the .tflite url; the ONNX engine loads
+    # the .onnx sibling, so swap the extension and fetch only that.
+    urls = [m["download_url"].replace(".tflite", ".onnx") for m in openwakeword.FEATURE_MODELS.values()]
+    urls += [m["download_url"] for m in openwakeword.VAD_MODELS.values()]  # already .onnx
+
     try:
-        openwakeword.utils.download_models()
+        for url in urls:
+            dest = os.path.join(target_dir, url.split("/")[-1])
+            if not os.path.exists(dest):
+                download_file(url, target_dir)
     except Exception as exc:  # network or layout issue
         raise WakeError(f"Could not download openWakeWord base models: {exc}") from exc
 
