@@ -17,8 +17,8 @@ class HeyClaude < Formula
 
   desc "Say 'Hey Claude' to dispatch a Claude Code background agent — on-device voice wake word"
   homepage "https://github.com/tachyurgy/hey-claude"
-  url "https://github.com/tachyurgy/hey-claude/archive/refs/tags/v0.2.0.tar.gz"
-  sha256 "17199943e48ce54ed3905277156b4b3e390976f3c6fa949ac3ac3ca42e97534a" # v0.2.0
+  url "https://github.com/tachyurgy/hey-claude/archive/refs/tags/v0.3.0.tar.gz"
+  sha256 "a69f99894a09bcc92c4c46933b5cd148a985158a886826deb62b7c3fb8378775" # v0.3.0
   license "MIT"
 
   depends_on "portaudio"
