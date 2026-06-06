@@ -31,6 +31,7 @@ models/
 
 # Local-only launch/publish notes (not for the public repo)
 PUBLISH-WALKTHROUGH.md
+HANDOFF-v0.3.0-publish.md
 
 # Local Colab CDP automation (superseded by training/train_wakewords.py)
 tools/
