@@ -2,6 +2,33 @@
 
 Reverse-chronological deploy log for hey-claude. (Process details: `RELEASE.md`.)
 
+## 2026-06-05 — v0.3.0 published to ALL channels (GitHub + PyPI + Homebrew)
+- **What deployed:** v0.3.0 is now live on every install channel — `pip install
+  hey-claude` / `pipx install hey-claude` (PyPI), `brew install
+  tachyurgy/tap/hey-claude` (Homebrew tap), and the GitHub release. No channel
+  trails anymore.
+- **Changed:** cut the **GitHub release** for the existing `v0.3.0` tag.
+  Published the wheel + sdist to **PyPI** (`hey_claude-0.3.0`, both artifacts
+  downloadable, HTTP 200). Bumped the **Homebrew tap** formula
+  (`tachyurgy/homebrew-tap` `Formula/hey-claude.rb`) to the v0.3.0 tarball
+  (sha256 `a69f9989…8775`); `brew info` resolves `stable 0.3.0`. Updated the
+  README install block to lead with the standard channels (dropped the "they
+  trail the tag" caveat) and kept the git-pin as the explicit-version option.
+- **How:** `gh release create v0.3.0` (triggered the publish + bump workflows).
+  The repo's PyPI **Trusted-Publishing** job still fails (`invalid-publisher` —
+  the publisher was never registered on pypi.org), so PyPI was uploaded with
+  **`twine`** using the existing levelbrookteam PyPI token (the same one used for
+  0.2.0). The Homebrew auto-bump action is a no-op (no `COMMITTER_TOKEN` secret),
+  so the formula was pushed to the tap by hand.
+- **Verified:** `pypi.org/pypi/hey-claude/json` → latest `0.3.0`, wheel URL 200;
+  `brew info hey-claude` → `stable 0.3.0` from the tap; `gh release list` shows
+  v0.3.0.
+- **Follow-up (account-side, Magnus):** (1) **register the PyPI Trusted
+  Publisher** (project `hey-claude` → Publishing → owner `tachyurgy`, repo
+  `hey-claude`, workflow `pypi-publish.yml`, env blank) so future releases
+  publish via OIDC with no token; (2) **rotate the PyPI token** in
+  `~/Desktop/rubygem credential` — it's been used in plaintext twice now.
+
 ## 2026-06-05 — v0.3.0 (SFX default, onset floor, dispatch gate)
 - **What deployed:** GitHub tag `v0.3.0` on the public repo. Install via
   `pipx install git+https://github.com/tachyurgy/hey-claude@v0.3.0`.

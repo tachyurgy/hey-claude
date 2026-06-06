@@ -74,16 +74,16 @@ for the full environment check.
 # PortAudio is the only system dependency
 brew install portaudio
 
-# recommended — installs the latest release in an isolated environment
-pipx install git+https://github.com/tachyurgy/hey-claude@v0.3.0
+# then pick one — all three serve the latest release (0.3.0):
+brew install tachyurgy/tap/hey-claude    # Homebrew tap
+pipx install hey-claude                   # PyPI, isolated env  (or: pip install hey-claude)
 ```
 
-Also on Homebrew and PyPI, but those can trail the newest tag — use the pinned
-`git+…@v0.3.0` above for the latest:
+Prefer to pin an exact tag (or install ahead of a channel update)? Install
+straight from the GitHub release:
 
 ```bash
-brew install tachyurgy/tap/hey-claude   # Homebrew tap
-pipx install hey-claude                  # or: pip install hey-claude  (PyPI)
+pipx install git+https://github.com/tachyurgy/hey-claude@v0.3.0
 ```
 
 Then run the first-run check, which tells you exactly what (if anything) is missing:
